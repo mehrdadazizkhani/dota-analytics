@@ -3,6 +3,7 @@ import AppLayout from "../components/layout/AppLayout";
 
 import Overview from "../pages/Overview";
 import Heroes from "../pages/Heroes";
+import HeroDetail from "../pages/HeroDetail";
 import Players from "../pages/Players";
 import Matches from "../pages/Matches";
 import Analysis from "../pages/Analysis";
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
       {
         path: "/heroes",
         element: <Heroes />,
+      },
+      {
+        path: "/heroes/:heroId",
+        element: <HeroDetail />,
       },
       {
         path: "/players",

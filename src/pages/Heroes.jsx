@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Widget from "../components/ui/Widget";
 import { useHeroes } from "../hooks/useHeroes";
 import { getHeroAsset } from "../lib/assets/heroes";
@@ -35,9 +36,10 @@ function Heroes() {
         {!loading && !error && (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
             {heroes.map((hero) => (
-              <article
+              <Link
                 key={hero.id}
-                className="group overflow-hidden rounded-lg border border-black/10 bg-black/[0.02] transition hover:border-black/20 hover:bg-black/[0.04] dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
+                to={`/heroes/${hero.id}`}
+                className="group block overflow-hidden rounded-lg border border-black/10 bg-black/[0.02] transition hover:border-black/20 hover:bg-black/[0.04] dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
               >
                 <div className="overflow-hidden bg-black/5 dark:bg-white/5">
                   <img
@@ -57,7 +59,7 @@ function Heroes() {
                     {hero.shortName || hero.name}
                   </p>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}
