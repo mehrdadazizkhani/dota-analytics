@@ -65,8 +65,10 @@ function HeroCard({ hero, isMatch, hasActiveFilters, isMeta, metaEnabled }) {
         isDimmed
           ? "border-2 border-white/10 opacity-20 grayscale"
           : isMeta
-            ? "border-2 border-[#ef4444] hover:border-[#ef4444]"
-            : "border-2 border-white/10 hover:border-white/20"
+            ? "border-2 border-[#ef4444] shadow-[0_0_14px_rgba(239,68,68,0.12)] hover:border-[#ef4444]"
+            : hasActiveFilters
+              ? "border-2 border-white/10 shadow-[0_0_14px_rgba(255,255,255,0.08)] hover:border-white/20"
+              : "border-2 border-white/10 hover:border-white/20"
       }`}
     >
       <div className="relative aspect-[71/94] overflow-hidden bg-white/[0.03]">
@@ -224,7 +226,7 @@ function Heroes() {
                 value={filters.search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search heroes..."
-                className="h-9 w-full rounded-md border border-white/10 bg-white/[0.03] px-3 text-xs text-white outline-none transition placeholder:text-white/30 focus:border-red-500/40 focus:bg-white/[0.05] sm:w-56"
+                className="h-9 w-full rounded-md border border-white/10 bg-white/[0.03] px-3 text-xs text-white outline-none transition placeholder:text-white/30 focus:border-red-500/40 focus:bg-white/[0.05] sm:w-56 lg:hidden"
               />
             </div>
 
