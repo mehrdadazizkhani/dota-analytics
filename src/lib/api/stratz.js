@@ -1,33 +1,48 @@
-import { GraphQLClient } from "graphql-request";
 import { GET_HEROES, GET_HERO, GET_HERO_META } from "./queries";
 
-const STRATZ_API_URL = "https://api.stratz.com/graphql";
+async function requestStratz(query, variables = {}) {
+  const response = await fetch("/api/stratz", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query,
+      variables,
+    }),
+  });
 
-const stratzClient = new GraphQLClient(STRATZ_API_URL, {
-  headers: {
-    Authorization: `Bearer ${import.meta.env.VITE_STRATZ_API_KEY}`,
-    "User-Agent": "STRATZ_API",
-  },
-});
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "STRATZ request failed.");
+  }
+
+  if (data.errors?.length) {
+    throw new Error(
+      data.errors[0]?.message || "STRATZ GraphQL request failed.",
+    );
+  }
+
+  return data.data;
+}
 
 export async function getHeroes() {
-  const data = await stratzClient.request(GET_HEROES);
+  const data = await requestStratz(GET_HEROES);
 
   return data.constants.heroes;
 }
 
 export async function getHero(heroId) {
-  const data = await stratzClient.request(GET_HERO, { heroId });
+  const data = await requestStratz(GET_HERO, { heroId });
 
   return data.constants.hero;
 }
 
 export async function getHeroMeta() {
-  const data = await stratzClient.request(GET_HERO_META);
+  const data = await requestStratz(GET_HERO_META);
 
   const stats = data.heroStats?.winDay || [];
-
-  console.log("getHeroMeta raw:", stats.length);
 
   const heroStatsMap = new Map();
 
@@ -55,14 +70,12 @@ export async function getHeroMeta() {
 
   const aggregatedStats = Array.from(heroStatsMap.values());
 
-  console.log("getHeroMeta aggregated:", aggregatedStats.length);
-
   const totalMatches = aggregatedStats.reduce(
     (total, hero) => total + hero.matchCount,
     0,
   );
 
-  const result = aggregatedStats.map((hero) => {
+  return aggregatedStats.map((hero) => {
     const winRate =
       hero.matchCount > 0 ? (hero.winCount / hero.matchCount) * 100 : 0;
 
@@ -77,8 +90,4 @@ export async function getHeroMeta() {
       pickRate,
     };
   });
-
-  console.log("getHeroMeta result:", result.length);
-
-  return result;
 }
