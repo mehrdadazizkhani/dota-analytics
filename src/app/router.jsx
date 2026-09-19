@@ -1,4 +1,5 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Outlet } from "react-router-dom";
+import AppLayout from "../components/layout/AppLayout";
 
 function Page({ title }) {
   return (
@@ -8,26 +9,39 @@ function Page({ title }) {
   );
 }
 
+function Layout() {
+  return (
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
+  );
+}
+
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Page title="Overview" />,
-  },
-  {
-    path: "/heroes",
-    element: <Page title="Heroes" />,
-  },
-  {
-    path: "/players",
-    element: <Page title="Players" />,
-  },
-  {
-    path: "/matches",
-    element: <Page title="Matches" />,
-  },
-  {
-    path: "/analysis",
-    element: <Page title="Analysis" />,
+    element: <Layout />,
+    children: [
+      {
+        path: "/",
+        element: <Page title="Overview" />,
+      },
+      {
+        path: "/heroes",
+        element: <Page title="Heroes" />,
+      },
+      {
+        path: "/players",
+        element: <Page title="Players" />,
+      },
+      {
+        path: "/matches",
+        element: <Page title="Matches" />,
+      },
+      {
+        path: "/analysis",
+        element: <Page title="Analysis" />,
+      },
+    ],
   },
 ]);
 
