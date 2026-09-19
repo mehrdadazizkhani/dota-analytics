@@ -1,10 +1,11 @@
 import { useTheme } from "../hooks/useTheme";
-import AppLayout from "../components/layout/AppLayout";
+import { RouterProvider } from "react-router-dom";
+import router from "./router";
 
 function App() {
   useTheme();
 
-  return <AppLayout />;
+  return <RouterProvider router={router} />;
 }
 
 export default App;

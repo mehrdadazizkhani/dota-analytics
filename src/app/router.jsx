@@ -1,0 +1,34 @@
+import { createBrowserRouter } from "react-router-dom";
+
+function Page({ title }) {
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+    </div>
+  );
+}
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Page title="Overview" />,
+  },
+  {
+    path: "/heroes",
+    element: <Page title="Heroes" />,
+  },
+  {
+    path: "/players",
+    element: <Page title="Players" />,
+  },
+  {
+    path: "/matches",
+    element: <Page title="Matches" />,
+  },
+  {
+    path: "/analysis",
+    element: <Page title="Analysis" />,
+  },
+]);
+
+export default router;
