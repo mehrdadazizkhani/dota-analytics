@@ -6,6 +6,7 @@ import { useHeroMeta } from "../hooks/useHeroMeta";
 import { useHeroFilters } from "../hooks/useHeroFilters";
 import { getHeroAsset } from "../lib/assets/heroes";
 import { getAttributeAsset } from "../lib/assets/attributes";
+import HeroSearchOverlay from "../components/heroes/HeroSearchOverlay";
 
 const ATTRIBUTE_GROUPS = [
   {
@@ -50,12 +51,18 @@ function getHeroAttribute(hero) {
   return "UNKNOWN";
 }
 
-function HeroCard({ hero, isMatch, hasActiveFilters, isMeta }) {
+function HeroCard({ hero, isMatch, hasActiveFilters, isMeta, metaEnabled }) {
+  const matchesMetaFilter = !metaEnabled || isMeta;
+
+  const matchesOtherFilters = !hasActiveFilters || isMatch;
+
+  const isDimmed = !matchesMetaFilter || !matchesOtherFilters;
+
   return (
     <Link
       to={`/heroes/${hero.id}`}
       className={`group block overflow-hidden rounded-md bg-white/[0.02] transition ${
-        hasActiveFilters && !isMatch
+        isDimmed
           ? "border-2 border-white/10 opacity-20 grayscale"
           : isMeta
             ? "border-2 border-[#ef4444] hover:border-[#ef4444]"
@@ -101,7 +108,14 @@ function HeroCard({ hero, isMatch, hasActiveFilters, isMeta }) {
   );
 }
 
-function HeroGroup({ group, heroes, heroMatches, heroMeta, hasActiveFilters }) {
+function HeroGroup({
+  group,
+  heroes,
+  heroMatches,
+  heroMeta,
+  hasActiveFilters,
+  metaEnabled,
+}) {
   const attributeIcon = getAttributeAsset(group.value);
 
   return (
@@ -126,7 +140,7 @@ function HeroGroup({ group, heroes, heroMatches, heroMeta, hasActiveFilters }) {
         <span className="text-[9px] text-white/30">{heroes.length}</span>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 sm:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
+      <div className="grid grid-cols-7 gap-2 sm:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
         {heroes.map((hero) => {
           const metaData = heroMeta.get(Number(hero.id));
 
@@ -137,6 +151,7 @@ function HeroGroup({ group, heroes, heroMatches, heroMeta, hasActiveFilters }) {
               isMatch={heroMatches.get(hero.id)}
               hasActiveFilters={hasActiveFilters}
               isMeta={Boolean(metaData?.isMeta)}
+              metaEnabled={metaEnabled}
             />
           );
         })}
@@ -149,11 +164,6 @@ function Heroes() {
   const { heroes, loading, error, retry } = useHeroes();
 
   const { meta, loading: metaLoading, error: metaError } = useHeroMeta(heroes);
-
-  console.log("Heroes:", heroes.length);
-  console.log("Meta:", meta.length);
-  console.log("Meta heroes:", meta.filter((hero) => hero.isMeta).length);
-  console.log("Meta data:", meta);
 
   const {
     filters,
@@ -179,7 +189,9 @@ function Heroes() {
         </p>
       </div>
 
-      <Widget title="All Heroes">
+      <HeroSearchOverlay search={filters.search} setSearch={setSearch} />
+
+      <Widget>
         {loading && <p className="text-sm text-white/50">Loading heroes...</p>}
 
         {error && (
@@ -195,7 +207,7 @@ function Heroes() {
             <button
               type="button"
               onClick={retry}
-              className="mt-4 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+              className="mt-4 cursor-pointer rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
             >
               Retry
             </button>
@@ -204,6 +216,18 @@ function Heroes() {
 
         {!loading && !error && (
           <>
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-sm font-medium">All Heroes</h2>
+
+              <input
+                type="search"
+                value={filters.search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search heroes..."
+                className="h-9 w-full rounded-md border border-white/10 bg-white/[0.03] px-3 text-xs text-white outline-none transition placeholder:text-white/30 focus:border-red-500/40 focus:bg-white/[0.05] sm:w-56"
+              />
+            </div>
+
             {metaError && (
               <div className="mb-4 text-[10px] text-white/30">
                 Meta data is currently unavailable.
@@ -216,7 +240,7 @@ function Heroes() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               {ATTRIBUTE_GROUPS.map((group) => {
                 const groupHeroes = heroes.filter(
                   (hero) => getHeroAttribute(hero) === group.value,
@@ -230,6 +254,7 @@ function Heroes() {
                     heroMatches={heroMatches}
                     heroMeta={heroMeta}
                     hasActiveFilters={hasActiveFilters}
+                    metaEnabled={filters.meta}
                   />
                 );
               })}
@@ -246,6 +271,7 @@ function Heroes() {
                   heroMatches={heroMatches}
                   heroMeta={heroMeta}
                   hasActiveFilters={hasActiveFilters}
+                  metaEnabled={filters.meta}
                 />
               )}
             </div>
@@ -255,7 +281,6 @@ function Heroes() {
 
       <HeroFilters
         filters={filters}
-        setSearch={setSearch}
         setAttackType={setAttackType}
         setComplexity={setComplexity}
         setMainRole={setMainRole}

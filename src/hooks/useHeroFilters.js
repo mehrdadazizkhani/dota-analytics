@@ -101,13 +101,6 @@ export function useHeroFilters(heroes, meta) {
     });
   };
 
-  const setMeta = (value) => {
-    setFilters((current) => ({
-      ...current,
-      meta: value,
-    }));
-  };
-
   const toggleMeta = () => {
     setFilters((current) => ({
       ...current,
@@ -132,8 +125,7 @@ export function useHeroFilters(heroes, meta) {
     filters.attackType !== null ||
     filters.complexity !== null ||
     filters.mainRole !== null ||
-    filters.roles.length > 0 ||
-    filters.meta;
+    filters.roles.length > 0;
 
   return {
     filters,
@@ -145,7 +137,6 @@ export function useHeroFilters(heroes, meta) {
     setComplexity,
     setMainRole,
     toggleRole,
-    setMeta,
     toggleMeta,
     clearFilters,
   };

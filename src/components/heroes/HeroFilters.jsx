@@ -23,21 +23,30 @@ const ROLES = [
   { label: "Pusher", value: "PUSHER" },
 ];
 
-function FilterButton({ active, children, onClick, accent = "red" }) {
-  const activeClass =
-    accent === "meta"
-      ? "border-red-500/60 bg-red-500/15 text-red-400"
-      : "border-red-500/50 bg-red-500/10 text-red-400";
-
+function FilterButton({ active, children, onClick, meta = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-md border px-2.5 py-1.5 text-[11px] font-medium whitespace-nowrap transition ${
-        active
-          ? activeClass
-          : "border-white/10 bg-white/[0.03] text-white/80 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
-      }`}
+      className={`
+        cursor-pointer
+        rounded-md
+        border
+        px-2.5
+        py-1.5
+        text-[11px]
+        font-medium
+        whitespace-nowrap
+        transition
+
+        ${
+          active
+            ? meta
+              ? "border-red-500/70 bg-red-500/15 text-red-400"
+              : "border-red-500/50 bg-red-500/10 text-red-400"
+            : "border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:text-white"
+        }
+      `}
     >
       {children}
     </button>
@@ -46,8 +55,8 @@ function FilterButton({ active, children, onClick, accent = "red" }) {
 
 function FilterGroup({ label, children }) {
   return (
-    <div className="flex min-w-0 items-center gap-1.5">
-      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-widest text-white/35">
+    <div className="flex items-center gap-1.5">
+      <span className="text-[9px] font-semibold uppercase tracking-widest text-white/30">
         {label}
       </span>
 
@@ -57,32 +66,69 @@ function FilterGroup({ label, children }) {
 }
 
 function Divider() {
-  return <div className="hidden h-5 w-px bg-white/10 lg:block" />;
+  return <div className="hidden h-5 w-px bg-white/10 xl:block" />;
 }
 
 function HeroFilters({
   filters,
-  setSearch,
   setAttackType,
   setComplexity,
   setMainRole,
   toggleRole,
   toggleMeta,
   clearFilters,
-  hasActiveFilters,
 }) {
   return (
-    <div className="fixed bottom-3 left-1/2 z-50 w-[calc(100%-1rem)] -translate-x-1/2 sm:bottom-4 sm:w-[calc(100%-2rem)] md:left-[calc(50%+7.5rem)] md:w-[calc(100%-16rem)]">
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2 rounded-xl border border-white/10 bg-[#090909]/95 p-2.5 shadow-2xl backdrop-blur-md sm:p-3 lg:flex-row lg:items-center lg:gap-3">
-        <input
-          type="search"
-          value={filters.search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search heroes..."
-          className="h-8 min-w-0 w-full rounded-md border border-white/10 bg-white/[0.03] px-2.5 text-xs text-white outline-none transition placeholder:text-white/30 focus:border-red-500/40 focus:bg-white/[0.05] sm:h-9 lg:w-40 lg:shrink-0"
-        />
+    <div
+      className="
+      
+        fixed
+        bottom-3
+        left-1/2
+        z-50
+        w-[calc(100%-1rem)]
+        -translate-x-1/2
 
-        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-x-3 gap-y-2 lg:justify-start">
+        sm:bottom-4
+        sm:w-[calc(100%-2rem)]
+
+        md:left-[calc(50%+7.5rem)]
+        md:w-[calc(94%-16rem)]
+      "
+    >
+      <div
+        className="
+          flex
+          w-full
+          items-center
+          gap-3
+
+          rounded-xl
+          border
+          border-white/10
+
+          bg-[#090909]/95
+          p-2.5
+
+          shadow-2xl
+          backdrop-blur-md
+
+          sm:p-3
+        "
+      >
+        {/* LEFT FILTERS */}
+        <div
+          className="
+            flex
+            min-w-0
+            flex-1
+            flex-wrap
+            items-center
+            justify-start
+            gap-x-3
+            gap-y-2
+          "
+        >
           <FilterGroup label="Attack">
             {ATTACK_TYPES.map((item) => (
               <FilterButton
@@ -152,27 +198,43 @@ function HeroFilters({
           <Divider />
 
           <FilterGroup label="Meta">
-            <FilterButton
-              active={filters.meta}
-              onClick={toggleMeta}
-              accent="meta"
-            >
+            <FilterButton active={filters.meta} onClick={toggleMeta} meta>
               META
             </FilterButton>
           </FilterGroup>
         </div>
 
-        {hasActiveFilters && (
-          <div className="flex shrink-0 justify-end border-t border-white/10 pt-2 lg:border-t-0 lg:border-l lg:pl-3 lg:pt-0">
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="rounded-md px-2.5 py-1.5 text-[11px] font-medium text-white/40 transition hover:bg-white/[0.05] hover:text-red-400"
-            >
-              Clear
-            </button>
-          </div>
-        )}
+        {/* RIGHT CLEAR */}
+        <div
+          className="
+            shrink-0
+            border-l
+            border-white/10
+            pl-3
+          "
+        >
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="
+              cursor-pointer
+              rounded-md
+              px-3
+              py-1.5
+
+              text-[11px]
+              font-medium
+              text-white/40
+
+              transition
+
+              hover:bg-white/[0.05]
+              hover:text-red-400
+            "
+          >
+            Clear
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ export const GET_HEROES = `
         name
         displayName
         shortName
+        aliases
         roles {
           roleId
         }
