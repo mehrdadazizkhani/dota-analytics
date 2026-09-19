@@ -1,5 +1,6 @@
 import Widget from "../components/ui/Widget";
 import { useHeroes } from "../hooks/useHeroes";
+import { getHeroAsset } from "../lib/assets/heroes";
 
 function Heroes() {
   const { heroes, loading, error } = useHeroes();
@@ -32,24 +33,31 @@ function Heroes() {
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
             {heroes.map((hero) => (
-              <div
+              <article
                 key={hero.id}
-                className="rounded-md border border-black/10 p-3 transition hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+                className="group overflow-hidden rounded-lg border border-black/10 bg-black/[0.02] transition hover:border-black/20 hover:bg-black/[0.04] dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
               >
-                <div className="text-xs text-black/40 dark:text-white/40">
-                  #{hero.id}
+                <div className="overflow-hidden bg-black/5 dark:bg-white/5">
+                  <img
+                    src={getHeroAsset(hero, "portrait")}
+                    alt={hero.displayName || hero.name}
+                    className="block h-auto w-full transition duration-300 group-hover:scale-[1.03]"
+                    loading="lazy"
+                  />
                 </div>
 
-                <div className="mt-1 text-sm font-medium">
-                  {hero.displayName || hero.name}
-                </div>
+                <div className="p-2.5">
+                  <h2 className="truncate text-sm font-semibold">
+                    {hero.displayName || hero.name}
+                  </h2>
 
-                <div className="mt-1 text-xs text-black/40 dark:text-white/40">
-                  {hero.shortName || hero.name}
+                  <p className="mt-1 truncate text-xs text-black/40 dark:text-white/40">
+                    {hero.shortName || hero.name}
+                  </p>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
