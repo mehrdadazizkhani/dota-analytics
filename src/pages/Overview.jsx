@@ -24,7 +24,13 @@ function Overview() {
           )}
 
           {error && (
-            <p className="text-sm text-red-500">Failed to load heroes.</p>
+            <div className="text-sm text-red-500">
+              <p>Failed to load heroes.</p>
+
+              <pre className="mt-2 whitespace-pre-wrap break-words text-xs">
+                {error.message}
+              </pre>
+            </div>
           )}
 
           {!loading && !error && (
