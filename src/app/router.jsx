@@ -1,13 +1,11 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
 
-function Page({ title }) {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-    </div>
-  );
-}
+import Overview from "../pages/Overview";
+import Heroes from "../pages/Heroes";
+import Players from "../pages/Players";
+import Matches from "../pages/Matches";
+import Analysis from "../pages/Analysis";
 
 function Layout() {
   return (
@@ -23,23 +21,23 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Page title="Overview" />,
+        element: <Overview />,
       },
       {
         path: "/heroes",
-        element: <Page title="Heroes" />,
+        element: <Heroes />,
       },
       {
         path: "/players",
-        element: <Page title="Players" />,
+        element: <Players />,
       },
       {
         path: "/matches",
-        element: <Page title="Matches" />,
+        element: <Matches />,
       },
       {
         path: "/analysis",
-        element: <Page title="Analysis" />,
+        element: <Analysis />,
       },
     ],
   },
