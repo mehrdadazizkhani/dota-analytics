@@ -8,4 +8,16 @@ const stratzClient = new GraphQLClient(STRATZ_API_URL, {
   },
 });
 
-export default stratzClient;
+export async function getHeroes() {
+  const data = await stratzClient.request(`
+    query GetHeroes {
+      constants {
+        heroes {
+          name
+        }
+      }
+    }
+  `);
+
+  return data.constants.heroes;
+}

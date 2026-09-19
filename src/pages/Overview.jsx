@@ -1,7 +1,10 @@
 import Widget from "../components/ui/Widget";
 import WidgetGrid from "../components/ui/WidgetGrid";
+import { useHeroes } from "../hooks/useHeroes";
 
 function Overview() {
+  const { heroes, loading, error } = useHeroes();
+
   return (
     <div>
       <div className="mb-6">
@@ -13,6 +16,28 @@ function Overview() {
       </div>
 
       <WidgetGrid>
+        <Widget title="Heroes">
+          {loading && (
+            <p className="text-sm text-black/50 dark:text-white/50">
+              Loading...
+            </p>
+          )}
+
+          {error && (
+            <p className="text-sm text-red-500">Failed to load heroes.</p>
+          )}
+
+          {!loading && !error && (
+            <>
+              <div className="text-2xl font-semibold">{heroes.length}</div>
+
+              <p className="mt-1 text-xs text-black/50 dark:text-white/50">
+                Heroes available from STRATZ
+              </p>
+            </>
+          )}
+        </Widget>
+
         <Widget title="Matches">
           <div className="text-2xl font-semibold">0</div>
 
@@ -22,14 +47,6 @@ function Overview() {
         </Widget>
 
         <Widget title="Players">
-          <div className="text-2xl font-semibold">0</div>
-
-          <p className="mt-1 text-xs text-black/50 dark:text-white/50">
-            No data available
-          </p>
-        </Widget>
-
-        <Widget title="Heroes">
           <div className="text-2xl font-semibold">0</div>
 
           <p className="mt-1 text-xs text-black/50 dark:text-white/50">
