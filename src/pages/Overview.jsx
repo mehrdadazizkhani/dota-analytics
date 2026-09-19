@@ -1,4 +1,5 @@
 import Widget from "../components/ui/Widget";
+import WidgetGrid from "../components/ui/WidgetGrid";
 
 function Overview() {
   return (
@@ -11,7 +12,7 @@ function Overview() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <WidgetGrid>
         <Widget title="Matches">
           <div className="text-2xl font-semibold">0</div>
 
@@ -35,7 +36,7 @@ function Overview() {
             No data available
           </p>
         </Widget>
-      </div>
+      </WidgetGrid>
     </div>
   );
 }
