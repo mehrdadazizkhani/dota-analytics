@@ -1,4 +1,12 @@
-const navigation = ["Overview", "Heroes", "Players", "Matches", "Analysis"];
+import { NavLink } from "react-router-dom";
+
+const navigation = [
+  { label: "Overview", path: "/" },
+  { label: "Heroes", path: "/heroes" },
+  { label: "Players", path: "/players" },
+  { label: "Matches", path: "/matches" },
+  { label: "Analysis", path: "/analysis" },
+];
 
 function Sidebar() {
   return (
@@ -10,13 +18,19 @@ function Sidebar() {
 
         <div className="space-y-1">
           {navigation.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className="w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-black/5 dark:hover:bg-white/5"
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `block rounded-md px-3 py-2 text-sm transition ${
+                  isActive
+                    ? "bg-black/5 font-medium dark:bg-white/5"
+                    : "hover:bg-black/5 dark:hover:bg-white/5"
+                }`
+              }
             >
-              {item}
-            </button>
+              {item.label}
+            </NavLink>
           ))}
         </div>
       </nav>
