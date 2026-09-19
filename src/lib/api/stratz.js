@@ -6,6 +6,7 @@ const STRATZ_API_URL = "https://api.stratz.com/graphql";
 const stratzClient = new GraphQLClient(STRATZ_API_URL, {
   headers: {
     Authorization: `Bearer ${import.meta.env.VITE_STRATZ_API_KEY}`,
+    "User-Agent": "STRATZ_API",
   },
 });
 

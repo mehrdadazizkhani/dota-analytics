@@ -1,14 +1,10 @@
-import { useTheme } from "../../hooks/useTheme";
-
 function Header() {
-  const { theme, setTheme } = useTheme();
-
   return (
-    <header className="h-16 border-b border-black/10 bg-white dark:border-white/10 dark:bg-black">
+    <header className="h-16 border-b border-white/10 bg-black">
       <div className="flex h-full items-center gap-6 px-6">
         {/* Logo */}
         <div className="shrink-0">
-          <span className="text-sm font-semibold tracking-wide">
+          <span className="text-sm font-semibold tracking-wide text-white">
             Dota Analytics
           </span>
         </div>
@@ -19,26 +15,16 @@ function Header() {
             <input
               type="text"
               placeholder="Search players, matches, heroes..."
-              className="h-9 w-full rounded-md border border-black/10 bg-black/5 px-3 text-sm outline-none transition placeholder:text-black/40 focus:border-black/20 dark:border-white/10 dark:bg-white/5 dark:placeholder:text-white/40 dark:focus:border-white/20"
+              className="h-9 w-full rounded-md border border-white/10 bg-white/[0.03] px-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white/20 focus:bg-white/[0.05]"
             />
           </div>
         </div>
 
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-3">
-          <select
-            value={theme}
-            onChange={(event) => setTheme(event.target.value)}
-            className="h-9 rounded-md border border-black/10 bg-transparent px-2 text-xs outline-none dark:border-white/10"
-          >
-            <option value="system">System</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-
           <button
             type="button"
-            className="rounded-md px-3 py-2 text-xs font-medium transition hover:bg-black/5 dark:hover:bg-white/5"
+            className="rounded-md px-3 py-2 text-xs font-medium text-white/70 transition hover:bg-white/[0.05] hover:text-white"
           >
             Profile
           </button>

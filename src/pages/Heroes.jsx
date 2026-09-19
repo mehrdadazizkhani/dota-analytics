@@ -1,13 +1,127 @@
 import { Link } from "react-router-dom";
 import Widget from "../components/ui/Widget";
+import HeroFilters from "../components/heroes/HeroFilters";
 import { useHeroes } from "../hooks/useHeroes";
+import { useHeroFilters } from "../hooks/useHeroFilters";
 import { getHeroAsset } from "../lib/assets/heroes";
+
+const ATTRIBUTE_GROUPS = [
+  {
+    label: "Strength",
+    values: ["STRENGTH"],
+  },
+  {
+    label: "Agility",
+    values: ["AGILITY"],
+  },
+  {
+    label: "Intelligence",
+    values: ["INTELLIGENCE"],
+  },
+  {
+    label: "Universal",
+    values: ["UNIVERSAL"],
+  },
+];
+
+function getHeroAttribute(hero) {
+  const attribute = String(
+    hero.stats?.primaryAttributeEnum || hero.stats?.primaryAttribute || "",
+  ).toUpperCase();
+
+  if (attribute.includes("STRENGTH") || attribute === "STR") {
+    return "STRENGTH";
+  }
+
+  if (attribute.includes("AGILITY") || attribute === "AGI") {
+    return "AGILITY";
+  }
+
+  if (attribute.includes("INTELLIGENCE") || attribute === "INT") {
+    return "INTELLIGENCE";
+  }
+
+  if (attribute.includes("UNIVERSAL") || attribute === "ALL") {
+    return "UNIVERSAL";
+  }
+
+  return "UNKNOWN";
+}
+
+function HeroCard({ hero, isMatch, hasActiveFilters }) {
+  return (
+    <Link
+      to={`/heroes/${hero.id}`}
+      className={`group block overflow-hidden rounded-md border border-black/10 bg-black/[0.02] transition dark:border-white/10 dark:bg-white/[0.02] ${
+        hasActiveFilters && !isMatch
+          ? "opacity-20 grayscale"
+          : "hover:border-black/20 hover:bg-black/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
+      }`}
+    >
+      <div className="aspect-[71/94] overflow-hidden bg-black/5 dark:bg-white/5">
+        <img
+          src={getHeroAsset(hero, "portrait")}
+          alt={hero.displayName || hero.name}
+          className="block h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+          loading="lazy"
+        />
+      </div>
+
+      <div className="px-1 py-1">
+        <h3 className="truncate text-[8px] font-semibold leading-tight sm:text-[9px]">
+          {hero.displayName || hero.name}
+        </h3>
+      </div>
+    </Link>
+  );
+}
+
+function HeroGroup({ label, heroes, heroMatches, hasActiveFilters }) {
+  return (
+    <section className="min-w-0">
+      <div className="mb-2 flex items-center gap-2">
+        <h2 className="text-[10px] font-semibold uppercase tracking-widest">
+          {label}
+        </h2>
+
+        <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+
+        <span className="text-[9px] text-black/30 dark:text-white/30">
+          {heroes.length}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 sm:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
+        {heroes.map((hero) => (
+          <HeroCard
+            key={hero.id}
+            hero={hero}
+            isMatch={heroMatches.get(hero.id)}
+            hasActiveFilters={hasActiveFilters}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function Heroes() {
   const { heroes, loading, error } = useHeroes();
 
+  const {
+    filters,
+    heroMatches,
+    hasActiveFilters,
+    setSearch,
+    setAttackType,
+    setComplexity,
+    setMainRole,
+    toggleRole,
+    clearFilters,
+  } = useHeroFilters(heroes);
+
   return (
-    <div>
+    <div className="pb-24">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Heroes</h1>
 
@@ -34,36 +148,47 @@ function Heroes() {
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
-            {heroes.map((hero) => (
-              <Link
-                key={hero.id}
-                to={`/heroes/${hero.id}`}
-                className="group block overflow-hidden rounded-lg border border-black/10 bg-black/[0.02] transition hover:border-black/20 hover:bg-black/[0.04] dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
-              >
-                <div className="overflow-hidden bg-black/5 dark:bg-white/5">
-                  <img
-                    src={getHeroAsset(hero, "portrait")}
-                    alt={hero.displayName || hero.name}
-                    className="block h-auto w-full transition duration-300 group-hover:scale-[1.03]"
-                    loading="lazy"
-                  />
-                </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {ATTRIBUTE_GROUPS.map((group) => {
+              const groupHeroes = heroes.filter((hero) =>
+                group.values.includes(getHeroAttribute(hero)),
+              );
 
-                <div className="p-2.5">
-                  <h2 className="truncate text-sm font-semibold">
-                    {hero.displayName || hero.name}
-                  </h2>
+              return (
+                <HeroGroup
+                  key={group.label}
+                  label={group.label}
+                  heroes={groupHeroes}
+                  heroMatches={heroMatches}
+                  hasActiveFilters={hasActiveFilters}
+                />
+              );
+            })}
 
-                  <p className="mt-1 truncate text-xs text-black/40 dark:text-white/40">
-                    {hero.shortName || hero.name}
-                  </p>
-                </div>
-              </Link>
-            ))}
+            {heroes.some((hero) => getHeroAttribute(hero) === "UNKNOWN") && (
+              <HeroGroup
+                label="Unknown"
+                heroes={heroes.filter(
+                  (hero) => getHeroAttribute(hero) === "UNKNOWN",
+                )}
+                heroMatches={heroMatches}
+                hasActiveFilters={hasActiveFilters}
+              />
+            )}
           </div>
         )}
       </Widget>
+
+      <HeroFilters
+        filters={filters}
+        setSearch={setSearch}
+        setAttackType={setAttackType}
+        setComplexity={setComplexity}
+        setMainRole={setMainRole}
+        toggleRole={toggleRole}
+        clearFilters={clearFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
     </div>
   );
 }
