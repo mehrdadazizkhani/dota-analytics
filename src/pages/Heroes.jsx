@@ -146,9 +146,14 @@ function HeroGroup({ group, heroes, heroMatches, heroMeta, hasActiveFilters }) {
 }
 
 function Heroes() {
-  const { heroes, loading, error } = useHeroes();
+  const { heroes, loading, error, retry } = useHeroes();
 
-  const { meta, loading: metaLoading, error: metaError } = useHeroMeta();
+  const { meta, loading: metaLoading, error: metaError } = useHeroMeta(heroes);
+
+  console.log("Heroes:", heroes.length);
+  console.log("Meta:", meta.length);
+  console.log("Meta heroes:", meta.filter((hero) => hero.isMeta).length);
+  console.log("Meta data:", meta);
 
   const {
     filters,
@@ -178,19 +183,29 @@ function Heroes() {
         {loading && <p className="text-sm text-white/50">Loading heroes...</p>}
 
         {error && (
-          <div className="text-sm text-red-400">
-            <p>Failed to load heroes.</p>
+          <div className="flex min-h-40 flex-col items-center justify-center text-center">
+            <p className="text-sm font-medium text-white/80">
+              Unable to load hero data.
+            </p>
 
-            <pre className="mt-2 whitespace-pre-wrap break-words text-xs">
-              {error.message}
-            </pre>
+            <p className="mt-1 text-xs text-white/40">
+              STRATZ is temporarily unavailable. Please try again.
+            </p>
+
+            <button
+              type="button"
+              onClick={retry}
+              className="mt-4 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+            >
+              Retry
+            </button>
           </div>
         )}
 
         {!loading && !error && (
           <>
             {metaError && (
-              <div className="mb-4 rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-400">
+              <div className="mb-4 text-[10px] text-white/30">
                 Meta data is currently unavailable.
               </div>
             )}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getHeroes } from "../lib/api/stratz";
 
 export function useHeroes() {
@@ -6,40 +6,31 @@ export function useHeroes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadHeroes = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    async function loadHeroes() {
-      try {
-        setLoading(true);
-        setError(null);
+      const data = await getHeroes();
 
-        const data = await getHeroes();
+      setHeroes(data);
+    } catch (err) {
+      console.error("Failed to load heroes:", err);
 
-        if (!cancelled) {
-          setHeroes(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+      setError(err);
+    } finally {
+      setLoading(false);
     }
-
-    loadHeroes();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    loadHeroes();
+  }, [loadHeroes]);
 
   return {
     heroes,
     loading,
     error,
+    retry: loadHeroes,
   };
 }

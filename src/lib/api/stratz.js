@@ -27,26 +27,58 @@ export async function getHeroMeta() {
 
   const stats = data.heroStats?.winDay || [];
 
-  const totalMatches = stats.reduce(
-    (total, hero) => total + Number(hero.matchCount || 0),
+  console.log("getHeroMeta raw:", stats.length);
+
+  const heroStatsMap = new Map();
+
+  for (const stat of stats) {
+    const heroId = Number(stat.heroId);
+
+    if (!heroId) {
+      continue;
+    }
+
+    const existing = heroStatsMap.get(heroId);
+
+    if (existing) {
+      existing.winCount += Number(stat.winCount || 0);
+
+      existing.matchCount += Number(stat.matchCount || 0);
+    } else {
+      heroStatsMap.set(heroId, {
+        heroId,
+        winCount: Number(stat.winCount || 0),
+        matchCount: Number(stat.matchCount || 0),
+      });
+    }
+  }
+
+  const aggregatedStats = Array.from(heroStatsMap.values());
+
+  console.log("getHeroMeta aggregated:", aggregatedStats.length);
+
+  const totalMatches = aggregatedStats.reduce(
+    (total, hero) => total + hero.matchCount,
     0,
   );
 
-  return stats.map((hero) => {
-    const matchCount = Number(hero.matchCount || 0);
+  const result = aggregatedStats.map((hero) => {
+    const winRate =
+      hero.matchCount > 0 ? (hero.winCount / hero.matchCount) * 100 : 0;
 
-    const winCount = Number(hero.winCount || 0);
-
-    const winRate = matchCount > 0 ? (winCount / matchCount) * 100 : 0;
-
-    const pickRate = totalMatches > 0 ? (matchCount / totalMatches) * 100 : 0;
+    const pickRate =
+      totalMatches > 0 ? (hero.matchCount / totalMatches) * 100 : 0;
 
     return {
       heroId: hero.heroId,
-      winCount,
-      matchCount,
+      winCount: hero.winCount,
+      matchCount: hero.matchCount,
       winRate,
       pickRate,
     };
   });
+
+  console.log("getHeroMeta result:", result.length);
+
+  return result;
 }
