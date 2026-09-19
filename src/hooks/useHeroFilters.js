@@ -6,6 +6,7 @@ const INITIAL_FILTERS = {
   complexity: null,
   mainRole: null,
   roles: [],
+  meta: false,
 };
 
 function normalize(value) {
@@ -56,7 +57,7 @@ function matchesHero(hero, filters) {
   );
 }
 
-export function useHeroFilters(heroes) {
+export function useHeroFilters(heroes, meta) {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
 
   const setSearch = (value) => {
@@ -100,6 +101,20 @@ export function useHeroFilters(heroes) {
     });
   };
 
+  const setMeta = (value) => {
+    setFilters((current) => ({
+      ...current,
+      meta: value,
+    }));
+  };
+
+  const toggleMeta = () => {
+    setFilters((current) => ({
+      ...current,
+      meta: !current.meta,
+    }));
+  };
+
   const clearFilters = () => {
     setFilters(INITIAL_FILTERS);
   };
@@ -108,22 +123,30 @@ export function useHeroFilters(heroes) {
     return new Map(heroes.map((hero) => [hero.id, matchesHero(hero, filters)]));
   }, [heroes, filters]);
 
+  const heroMeta = useMemo(() => {
+    return new Map(meta.map((hero) => [Number(hero.heroId), hero]));
+  }, [meta]);
+
   const hasActiveFilters =
     filters.search.trim() !== "" ||
     filters.attackType !== null ||
     filters.complexity !== null ||
     filters.mainRole !== null ||
-    filters.roles.length > 0;
+    filters.roles.length > 0 ||
+    filters.meta;
 
   return {
     filters,
     heroMatches,
+    heroMeta,
     hasActiveFilters,
     setSearch,
     setAttackType,
     setComplexity,
     setMainRole,
     toggleRole,
+    setMeta,
+    toggleMeta,
     clearFilters,
   };
 }

@@ -6,11 +6,9 @@ export const GET_HEROES = `
         name
         displayName
         shortName
-
         roles {
           roleId
         }
-
         stats {
           complexity
           attackType
@@ -31,22 +29,18 @@ export const GET_HERO = `
         displayName
         shortName
         aliases
-
         roles {
           roleId
           level
         }
-
         abilities {
           slot
           abilityId
         }
-
         talents {
           abilityId
           slot
         }
-
         stats {
           enabled
           heroUnlockOrder
@@ -77,6 +71,18 @@ export const GET_HERO = `
           complexity
           primaryAttributeEnum
         }
+      }
+    }
+  }
+`;
+
+export const GET_HERO_META = `
+  query GetHeroMeta {
+    heroStats {
+      winDay(take: 8) {
+        heroId
+        winCount
+        matchCount
       }
     }
   }

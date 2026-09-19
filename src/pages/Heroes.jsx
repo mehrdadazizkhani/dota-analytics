@@ -2,25 +2,27 @@ import { Link } from "react-router-dom";
 import Widget from "../components/ui/Widget";
 import HeroFilters from "../components/heroes/HeroFilters";
 import { useHeroes } from "../hooks/useHeroes";
+import { useHeroMeta } from "../hooks/useHeroMeta";
 import { useHeroFilters } from "../hooks/useHeroFilters";
 import { getHeroAsset } from "../lib/assets/heroes";
+import { getAttributeAsset } from "../lib/assets/attributes";
 
 const ATTRIBUTE_GROUPS = [
   {
     label: "Strength",
-    values: ["STRENGTH"],
+    value: "STRENGTH",
   },
   {
     label: "Agility",
-    values: ["AGILITY"],
+    value: "AGILITY",
   },
   {
     label: "Intelligence",
-    values: ["INTELLIGENCE"],
+    value: "INTELLIGENCE",
   },
   {
     label: "Universal",
-    values: ["UNIVERSAL"],
+    value: "UNIVERSAL",
   },
 ];
 
@@ -48,17 +50,40 @@ function getHeroAttribute(hero) {
   return "UNKNOWN";
 }
 
-function HeroCard({ hero, isMatch, hasActiveFilters }) {
+function HeroCard({ hero, isMatch, hasActiveFilters, isMeta }) {
   return (
     <Link
       to={`/heroes/${hero.id}`}
-      className={`group block overflow-hidden rounded-md border border-black/10 bg-black/[0.02] transition dark:border-white/10 dark:bg-white/[0.02] ${
+      className={`group block overflow-hidden rounded-md bg-white/[0.02] transition ${
         hasActiveFilters && !isMatch
-          ? "opacity-20 grayscale"
-          : "hover:border-black/20 hover:bg-black/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
+          ? "border-2 border-white/10 opacity-20 grayscale"
+          : isMeta
+            ? "border-2 border-[#ef4444] hover:border-[#ef4444]"
+            : "border-2 border-white/10 hover:border-white/20"
       }`}
     >
-      <div className="aspect-[71/94] overflow-hidden bg-black/5 dark:bg-white/5">
+      <div className="relative aspect-[71/94] overflow-hidden bg-white/[0.03]">
+        {isMeta && (
+          <div className="pointer-events-none absolute -right-[2px] -top-[2px] z-10 h-[18px] w-[18px]">
+            <svg
+              viewBox="0 0 14 14"
+              className="h-full w-full"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0,2C0,0.895 0.895,0 2,0L12,0C13.105,0 14,0.895 14,2L14,12C14,13.105 13.105,14 12,14L12,14C10.643,13.996 9.293,13.773 8.012,13.321C6.325,12.727 4.779,11.75 3.515,10.485C2.25,9.221 1.273,7.675 0.679,5.988C0.236,4.732 0.013,3.409 0,2.078L0,2Z"
+                fill="#ef4444"
+              />
+
+              <path
+                d="M6.594,4.249L7.571,2.267C7.747,1.909 8.254,1.913 8.429,2.267L9.405,4.249L11.59,4.568C11.982,4.625 12.139,5.108 11.855,5.385L10.274,6.927L10.648,9.106C10.716,9.5 10.301,9.793 9.954,9.61L8,8.582L6.046,9.61C5.699,9.795 5.285,9.5 5.351,9.106L5.726,6.928L4.145,5.386C3.861,5.109 4.018,4.625 4.41,4.568L6.594,4.249Z"
+                fill="#000000"
+              />
+            </svg>
+          </div>
+        )}
+
         <img
           src={getHeroAsset(hero, "portrait")}
           alt={hero.displayName || hero.name}
@@ -76,30 +101,45 @@ function HeroCard({ hero, isMatch, hasActiveFilters }) {
   );
 }
 
-function HeroGroup({ label, heroes, heroMatches, hasActiveFilters }) {
+function HeroGroup({ group, heroes, heroMatches, heroMeta, hasActiveFilters }) {
+  const attributeIcon = getAttributeAsset(group.value);
+
   return (
     <section className="min-w-0">
       <div className="mb-2 flex items-center gap-2">
-        <h2 className="text-[10px] font-semibold uppercase tracking-widest">
-          {label}
-        </h2>
+        <div className="flex items-center gap-1.5">
+          {attributeIcon && (
+            <img
+              src={attributeIcon}
+              alt=""
+              className="h-4 w-4 object-contain"
+            />
+          )}
 
-        <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+          <h2 className="text-[10px] font-semibold uppercase tracking-widest">
+            {group.label}
+          </h2>
+        </div>
 
-        <span className="text-[9px] text-black/30 dark:text-white/30">
-          {heroes.length}
-        </span>
+        <div className="h-px flex-1 bg-white/10" />
+
+        <span className="text-[9px] text-white/30">{heroes.length}</span>
       </div>
 
       <div className="grid grid-cols-7 gap-1 sm:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
-        {heroes.map((hero) => (
-          <HeroCard
-            key={hero.id}
-            hero={hero}
-            isMatch={heroMatches.get(hero.id)}
-            hasActiveFilters={hasActiveFilters}
-          />
-        ))}
+        {heroes.map((hero) => {
+          const metaData = heroMeta.get(Number(hero.id));
+
+          return (
+            <HeroCard
+              key={hero.id}
+              hero={hero}
+              isMatch={heroMatches.get(hero.id)}
+              hasActiveFilters={hasActiveFilters}
+              isMeta={Boolean(metaData?.isMeta)}
+            />
+          );
+        })}
       </div>
     </section>
   );
@@ -108,37 +148,37 @@ function HeroGroup({ label, heroes, heroMatches, hasActiveFilters }) {
 function Heroes() {
   const { heroes, loading, error } = useHeroes();
 
+  const { meta, loading: metaLoading, error: metaError } = useHeroMeta();
+
   const {
     filters,
     heroMatches,
+    heroMeta,
     hasActiveFilters,
     setSearch,
     setAttackType,
     setComplexity,
     setMainRole,
     toggleRole,
+    toggleMeta,
     clearFilters,
-  } = useHeroFilters(heroes);
+  } = useHeroFilters(heroes, meta);
 
   return (
     <div className="pb-24">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Heroes</h1>
 
-        <p className="mt-1 text-sm text-black/50 dark:text-white/50">
+        <p className="mt-1 text-sm text-white/50">
           Explore Dota 2 heroes and their statistics.
         </p>
       </div>
 
       <Widget title="All Heroes">
-        {loading && (
-          <p className="text-sm text-black/50 dark:text-white/50">
-            Loading heroes...
-          </p>
-        )}
+        {loading && <p className="text-sm text-white/50">Loading heroes...</p>}
 
         {error && (
-          <div className="text-sm text-red-500">
+          <div className="text-sm text-red-400">
             <p>Failed to load heroes.</p>
 
             <pre className="mt-2 whitespace-pre-wrap break-words text-xs">
@@ -148,34 +188,53 @@ function Heroes() {
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {ATTRIBUTE_GROUPS.map((group) => {
-              const groupHeroes = heroes.filter((hero) =>
-                group.values.includes(getHeroAttribute(hero)),
-              );
+          <>
+            {metaError && (
+              <div className="mb-4 rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-400">
+                Meta data is currently unavailable.
+              </div>
+            )}
 
-              return (
+            {metaLoading && (
+              <div className="mb-4 text-[10px] text-white/30">
+                Loading meta data...
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {ATTRIBUTE_GROUPS.map((group) => {
+                const groupHeroes = heroes.filter(
+                  (hero) => getHeroAttribute(hero) === group.value,
+                );
+
+                return (
+                  <HeroGroup
+                    key={group.value}
+                    group={group}
+                    heroes={groupHeroes}
+                    heroMatches={heroMatches}
+                    heroMeta={heroMeta}
+                    hasActiveFilters={hasActiveFilters}
+                  />
+                );
+              })}
+
+              {heroes.some((hero) => getHeroAttribute(hero) === "UNKNOWN") && (
                 <HeroGroup
-                  key={group.label}
-                  label={group.label}
-                  heroes={groupHeroes}
+                  group={{
+                    label: "Unknown",
+                    value: "UNKNOWN",
+                  }}
+                  heroes={heroes.filter(
+                    (hero) => getHeroAttribute(hero) === "UNKNOWN",
+                  )}
                   heroMatches={heroMatches}
+                  heroMeta={heroMeta}
                   hasActiveFilters={hasActiveFilters}
                 />
-              );
-            })}
-
-            {heroes.some((hero) => getHeroAttribute(hero) === "UNKNOWN") && (
-              <HeroGroup
-                label="Unknown"
-                heroes={heroes.filter(
-                  (hero) => getHeroAttribute(hero) === "UNKNOWN",
-                )}
-                heroMatches={heroMatches}
-                hasActiveFilters={hasActiveFilters}
-              />
-            )}
-          </div>
+              )}
+            </div>
+          </>
         )}
       </Widget>
 
@@ -186,6 +245,7 @@ function Heroes() {
         setComplexity={setComplexity}
         setMainRole={setMainRole}
         toggleRole={toggleRole}
+        toggleMeta={toggleMeta}
         clearFilters={clearFilters}
         hasActiveFilters={hasActiveFilters}
       />
