@@ -10,3 +10,17 @@ export const GET_HEROES = `
     }
   }
 `;
+
+export const GET_HERO = `
+  query GetHero($heroId: Short!) {
+    constants {
+      hero(id: $heroId) {
+        id
+        name
+        displayName
+        shortName
+        aliases
+      }
+    }
+  }
+`;
