@@ -1,4 +1,8 @@
+import { useTheme } from "../../hooks/useTheme";
+
 function Header() {
+  const { theme, setTheme } = useTheme();
+
   return (
     <header className="h-16 border-b border-black/10 bg-white dark:border-white/10 dark:bg-black">
       <div className="flex h-full items-center gap-6 px-6">
@@ -22,12 +26,15 @@ function Header() {
 
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-3">
-          <button
-            type="button"
-            className="rounded-md px-3 py-2 text-xs font-medium transition hover:bg-black/5 dark:hover:bg-white/5"
+          <select
+            value={theme}
+            onChange={(event) => setTheme(event.target.value)}
+            className="h-9 rounded-md border border-black/10 bg-transparent px-2 text-xs outline-none dark:border-white/10"
           >
-            Theme
-          </button>
+            <option value="system">System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
 
           <button
             type="button"
