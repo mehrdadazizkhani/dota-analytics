@@ -22,12 +22,12 @@ function Header() {
 
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-3">
-          <button
-            type="button"
-            className="rounded-md px-3 py-2 text-xs font-medium text-white/70 transition hover:bg-white/[0.05] hover:text-white"
+          <a
+            href="/api/auth/steam"
+            className="cursor-pointer rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/70 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
           >
-            Profile
-          </button>
+            Login with Steam
+          </a>
         </div>
       </div>
     </header>
