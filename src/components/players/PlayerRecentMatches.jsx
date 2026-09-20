@@ -1,3 +1,11 @@
+import {
+  OfflaneIcon,
+  SafelaneIcon,
+  MidlaneIcon,
+  SoftSupportIcon,
+  HardSupportIcon,
+} from "../icons/PositionIcons";
+
 function formatDuration(seconds) {
   const totalSeconds = Number(seconds || 0);
 
@@ -25,6 +33,20 @@ function getPositionLabel(position) {
   };
 
   return positions[position] || position || "—";
+}
+
+function getPositionIcon(position) {
+  const icons = {
+    POSITION_1: SafelaneIcon,
+    POSITION_2: MidlaneIcon,
+    POSITION_3: OfflaneIcon,
+    POSITION_4: SoftSupportIcon,
+    POSITION_5: HardSupportIcon,
+  };
+
+  const Icon = icons[position];
+
+  return Icon ? <Icon /> : null;
 }
 
 function PlayerRecentMatches({ matches }) {
@@ -62,8 +84,6 @@ function PlayerRecentMatches({ matches }) {
                 <th className="px-5 py-4 font-medium">Duration</th>
 
                 <th className="px-5 py-4 font-medium">Date</th>
-
-                <th className="px-5 py-4 font-medium">League</th>
               </tr>
             </thead>
 
@@ -102,15 +122,15 @@ function PlayerRecentMatches({ matches }) {
                     </td>
 
                     <td className="px-5 py-4">
-                      <span
-                        className={
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold ${
                           player?.isVictory
-                            ? "text-sm font-medium text-emerald-400"
-                            : "text-sm font-medium text-red-400"
-                        }
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-red-500/20 text-red-400"
+                        }`}
                       >
-                        {player?.isVictory ? "Victory" : "Defeat"}
-                      </span>
+                        {player?.isVictory ? "W" : "L"}
+                      </div>
                     </td>
 
                     <td className="px-5 py-4">
@@ -124,15 +144,16 @@ function PlayerRecentMatches({ matches }) {
                     </td>
 
                     <td className="px-5 py-4">
-                      <span className="text-sm text-white">
-                        {player?.imp ?? "—"}
-                      </span>
+                      <ImpBar imp={player?.imp} />
                     </td>
 
                     <td className="px-5 py-4">
-                      <span className="text-sm text-white/70">
-                        {getPositionLabel(player?.position)}
-                      </span>
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.05]"
+                        title={getPositionLabel(player?.position)}
+                      >
+                        {getPositionIcon(player?.position)}
+                      </div>
                     </td>
 
                     <td className="px-5 py-4">
@@ -144,12 +165,6 @@ function PlayerRecentMatches({ matches }) {
                     <td className="px-5 py-4">
                       <span className="text-sm text-white/70">
                         {formatDate(match.startDateTime)}
-                      </span>
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <span className="text-sm text-white/70">
-                        {match.league?.displayName || "—"}
                       </span>
                     </td>
                   </tr>
@@ -164,3 +179,47 @@ function PlayerRecentMatches({ matches }) {
 }
 
 export default PlayerRecentMatches;
+
+function ImpBar({ imp }) {
+  const value = Math.max(-100, Math.min(100, Number(imp || 0)));
+  const width = Math.abs(value) / 2;
+
+  let barColor = "bg-white/40";
+
+  if (value >= 20) {
+    barColor = "bg-emerald-400";
+  }
+
+  if (value <= -20) {
+    barColor = "bg-red-400";
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex w-9 justify-center text-xs font-bold text-white/70">
+        {value > 0 ? "+" : ""}
+        {value}
+      </span>
+
+      <div className="relative h-2 w-20 overflow-hidden rounded-full bg-white/10">
+        <div className="absolute left-1/2 top-0 h-full w-px bg-white/30" />
+
+        {value >= 0 ? (
+          <div
+            className={`absolute left-1/2 top-0 h-full rounded-r-full ${barColor}`}
+            style={{
+              width: `${width}%`,
+            }}
+          />
+        ) : (
+          <div
+            className={`absolute right-1/2 top-0 h-full rounded-l-full ${barColor}`}
+            style={{
+              width: `${width}%`,
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}

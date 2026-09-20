@@ -7,17 +7,23 @@ function PlayerHeader({ player }) {
 
   const rank = getPlayerRank(player.seasonRank, player.seasonLeaderboardRank);
 
+  const playerImage = player.pro
+    ? `https://cdn.stratz.com/images/dota2/players/${player.accountId}.png`
+    : player.avatar;
+
   return (
     <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0b0d12]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_50%,rgba(255,255,255,0.07),transparent_35%)]" />
 
       <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
+        {/* Player info */}
         <div className="flex min-w-0 items-center gap-5">
+          {/* Avatar */}
           <div className="relative shrink-0">
             <div className="absolute -inset-1 rounded-2xl bg-white/10 blur-md" />
 
             <img
-              src={player.avatar}
+              src={playerImage}
               alt={player.name}
               className="relative h-20 w-20 rounded-2xl object-cover ring-1 ring-white/15 sm:h-24 sm:w-24"
             />
@@ -33,12 +39,17 @@ function PlayerHeader({ player }) {
             )}
           </div>
 
+          {/* Name / info */}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="truncate text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                {player.name}
+                {player.pro?.name || player.name}
               </h1>
-
+              {player.pro?.name && player.pro.name !== player.name && (
+                <p className="mt-1 text-xs text-white/40">
+                  Steam: {player.name}
+                </p>
+              )}
               {player.pro?.isPro && (
                 <span className="rounded-md border border-white/10 bg-white/[0.06] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/60">
                   Pro
@@ -50,7 +61,22 @@ function PlayerHeader({ player }) {
               Steam / Dota Account {player.accountId}
             </p>
 
+            {/* Team + Guild */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
+              {player.pro?.team?.id && (
+                <div className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.035] px-2.5 py-1">
+                  <img
+                    src={`https://cdn.stratz.com/images/dota2/teams/${player.pro.team.id}.png`}
+                    alt={player.pro.team.tag}
+                    className="h-5 w-5 object-contain"
+                  />
+
+                  <span className="text-xs font-semibold text-white/70">
+                    {player.pro.team.tag}
+                  </span>
+                </div>
+              )}
+
               {player.guild && (
                 <span className="rounded-md border border-white/10 bg-white/[0.035] px-2.5 py-1 text-xs text-white/60">
                   {player.guild.tag
@@ -58,16 +84,11 @@ function PlayerHeader({ player }) {
                     : player.guild.name}
                 </span>
               )}
-
-              {player.pro?.team?.tag && (
-                <span className="rounded-md border border-white/10 bg-white/[0.035] px-2.5 py-1 text-xs font-semibold text-white/70">
-                  {player.pro.team.tag}
-                </span>
-              )}
             </div>
           </div>
         </div>
 
+        {/* Rank */}
         <div className="flex items-center justify-end">
           {rank && (
             <div className="relative h-24 w-24 shrink-0">
