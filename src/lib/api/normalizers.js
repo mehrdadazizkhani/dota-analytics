@@ -113,3 +113,73 @@ export function normalizePlayer(player) {
     pro: normalizeProPlayer(steamAccount.proSteamAccount),
   };
 }
+
+export function normalizePlayerOverview(response) {
+  const player = response?.data?.player;
+
+  if (!player) {
+    return null;
+  }
+
+  return {
+    ...player,
+  };
+}
+
+export function normalizePlayerMatches(matches) {
+  if (!Array.isArray(matches)) {
+    return [];
+  }
+
+  return matches
+    .map((match) => ({
+      id: Number(match.id) || null,
+      durationSeconds: Number(match.durationSeconds || 0),
+      startDateTime: match.startDateTime || null,
+      actualRank: Number(match.actualRank || 0) || null,
+      lobbyType: match.lobbyType || null,
+
+      laneOutcome: {
+        bottom: match.bottomLaneOutcome || null,
+        mid: match.midLaneOutcome || null,
+        top: match.topLaneOutcome || null,
+      },
+
+      league: match.league
+        ? {
+            id: Number(match.league.id) || null,
+            displayName: match.league.displayName || "",
+          }
+        : null,
+
+      player: normalizeMatchPlayer(
+        Array.isArray(match.players) ? match.players[0] : null,
+      ),
+    }))
+    .filter((match) => match.id);
+}
+
+function normalizeMatchPlayer(player) {
+  if (!player) {
+    return null;
+  }
+
+  return {
+    kills: Number(player.kills || 0),
+    deaths: Number(player.deaths || 0),
+    assists: Number(player.assists || 0),
+    partyId: Number(player.partyId || 0) || null,
+    lane: player.lane || null,
+    position: player.position || null,
+    imp: Number(player.imp || 0),
+    isVictory: Boolean(player.isVictory),
+    award: player.award || null,
+
+    hero: player.hero
+      ? {
+          displayName: player.hero.displayName || "",
+          shortName: player.hero.shortName || "",
+        }
+      : null,
+  };
+}
