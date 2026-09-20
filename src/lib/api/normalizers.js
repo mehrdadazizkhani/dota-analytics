@@ -1,32 +1,56 @@
-export function normalizeHeroes(response) {
-  return response?.data?.constants?.heroes || [];
+function normalizeAliases(aliases) {
+  if (!Array.isArray(aliases)) {
+    return [];
+  }
+
+  return aliases
+    .filter(Boolean)
+    .map((alias) => String(alias).trim())
+    .filter(Boolean);
 }
 
-export function normalizePlayer(response) {
-  const steamAccount = response?.data?.player?.steamAccount;
+function normalizeRoles(roles) {
+  if (!Array.isArray(roles)) {
+    return [];
+  }
 
-  if (!steamAccount) {
+  return roles
+    .map((role) => ({
+      roleId: role?.roleId || null,
+    }))
+    .filter((role) => role.roleId);
+}
+
+export function normalizeHero(hero) {
+  if (!hero) {
     return null;
   }
 
+  const primaryAttribute =
+    hero.stats?.primaryAttributeEnum || hero.stats?.primaryAttribute || null;
+
+  const attackType = hero.stats?.attackType || null;
+  const complexity = Number(hero.stats?.complexity || 0);
+
   return {
-    accountId: Number(steamAccount.id) || null,
-
-    name: steamAccount.name || "",
-
-    avatar: steamAccount.avatar || "",
-
-    isDotaPlusSubscriber: Boolean(steamAccount.isDotaPlusSubscriber),
-
-    seasonRank: Number(steamAccount.seasonRank || 0),
-
-    seasonLeaderboardRank:
-      Number(steamAccount.seasonLeaderboardRank || 0) || null,
-
-    guild: normalizeGuild(steamAccount.guild),
-
-    pro: normalizePro(steamAccount.proSteamAccount),
+    id: Number(hero.id),
+    name: hero.name || "",
+    displayName: hero.displayName || "",
+    shortName: hero.shortName || "",
+    aliases: normalizeAliases(hero.aliases),
+    roles: normalizeRoles(hero.roles),
+    primaryAttribute,
+    attackType,
+    complexity,
   };
+}
+
+export function normalizeHeroes(heroes) {
+  if (!Array.isArray(heroes)) {
+    return [];
+  }
+
+  return heroes.map(normalizeHero).filter(Boolean);
 }
 
 function normalizeGuild(guild) {
@@ -42,41 +66,50 @@ function normalizeGuild(guild) {
   };
 }
 
-function normalizePro(pro) {
-  if (!pro) {
+function normalizeTeam(team) {
+  if (!team) {
     return null;
   }
 
   return {
-    name: pro.name || "",
-    realName: pro.realName || "",
-    isPro: Boolean(pro.isPro),
-
-    totalEarnings: Number(pro.totalEarnings || 0),
-
-    position: pro.position || null,
-
-    team: pro.team
-      ? {
-          id: Number(pro.team.id) || null,
-          tag: pro.team.tag || "",
-        }
-      : null,
+    id: Number(team.id) || null,
+    tag: team.tag || "",
   };
 }
 
-export function normalizePlayerOverview(response) {
-  const player = response?.data?.player;
-
-  if (!player) {
+function normalizeProPlayer(proSteamAccount) {
+  if (!proSteamAccount) {
     return null;
   }
 
   return {
-    ...player,
+    name: proSteamAccount.name || "",
+    realName: proSteamAccount.realName || "",
+    isPro: Boolean(proSteamAccount.isPro),
+    totalEarnings: Number(proSteamAccount.totalEarnings || 0),
+    position: proSteamAccount.position || null,
+    team: normalizeTeam(proSteamAccount.team),
   };
 }
 
-export function normalizePlayerMatches(response) {
-  return response?.data?.player?.matches?.edges?.map((edge) => edge.node) || [];
+export function normalizePlayer(player) {
+  const steamAccount = player?.steamAccount;
+
+  if (!steamAccount) {
+    return null;
+  }
+
+  return {
+    accountId: Number(steamAccount.id) || null,
+    name: steamAccount.name || "",
+    avatar: steamAccount.avatar || "",
+    isDotaPlusSubscriber: Boolean(steamAccount.isDotaPlusSubscriber),
+    seasonRank: Number(steamAccount.seasonRank || 0),
+    seasonLeaderboardRank:
+      Number(steamAccount.seasonLeaderboardRank || 0) || null,
+
+    guild: normalizeGuild(steamAccount.guild),
+
+    pro: normalizeProPlayer(steamAccount.proSteamAccount),
+  };
 }
