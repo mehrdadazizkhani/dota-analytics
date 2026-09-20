@@ -88,3 +88,18 @@ export const GET_HERO_META = `
     }
   }
 `;
+
+export const GET_PLAYER = `
+  query GetPlayer($steamAccountId: Long!) {
+    player(steamAccountId: $steamAccountId) {
+      steamAccount {
+        id
+        name
+        avatar
+        isDotaPlusSubscriber
+        seasonRank
+        seasonLeaderboardRank
+      }
+    }
+  }
+`;

@@ -1,5 +1,6 @@
-import { GET_HEROES, GET_HERO, GET_HERO_META } from "./queries";
-import { normalizeHeroes } from "./normalizers";
+import { GET_HEROES, GET_HERO, GET_HERO_META, GET_PLAYER } from "./queries";
+
+import { normalizeHeroes, normalizePlayer } from "./normalizers";
 
 async function requestStratz(query, variables = {}) {
   const response = await fetch("/api/stratz", {
@@ -44,7 +45,6 @@ export async function getHeroMeta() {
   const data = await requestStratz(GET_HERO_META);
 
   const stats = data.heroStats?.winDay || [];
-
   const heroStatsMap = new Map();
 
   for (const stat of stats) {
@@ -91,4 +91,18 @@ export async function getHeroMeta() {
       pickRate,
     };
   });
+}
+
+export async function getPlayer(steamAccountId) {
+  const numericSteamAccountId = Number(steamAccountId);
+
+  if (!Number.isSafeInteger(numericSteamAccountId)) {
+    throw new Error("Invalid Steam account ID.");
+  }
+
+  const data = await requestStratz(GET_PLAYER, {
+    steamAccountId: numericSteamAccountId,
+  });
+
+  return normalizePlayer(data.player);
 }

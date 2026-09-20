@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 const cache = globalThis.__DOTA_ANALYTICS_STRATZ_CACHE__ || new Map();
+
 const pendingRequests =
   globalThis.__DOTA_ANALYTICS_STRATZ_PENDING__ || new Map();
 
@@ -69,6 +70,23 @@ function wait(ms) {
   });
 }
 
+const data = await parseStratzResponse(response);
+
+if (data?.__nonJsonResponse) {
+  console.error(
+    "STRATZ returned a non-JSON response:",
+    response.status,
+    data.text,
+  );
+
+  throw new Error(
+    `STRATZ returned a non-JSON response with status ${response.status}: ${data.text.slice(
+      0,
+      500,
+    )}`,
+  );
+}
+
 async function fetchFromStratz(query, variables) {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
     try {
@@ -85,7 +103,22 @@ async function fetchFromStratz(query, variables) {
         }),
       });
 
-      const data = await response.json();
+      const data = await parseStratzResponse(response);
+
+      if (data?.__nonJsonResponse) {
+        console.error(
+          "STRATZ returned a non-JSON response:",
+          response.status,
+          data.text,
+        );
+
+        throw new Error(
+          `STRATZ returned a non-JSON response with status ${response.status}: ${data.text.slice(
+            0,
+            500,
+          )}`,
+        );
+      }
 
       if (response.ok) {
         return data;
@@ -113,7 +146,10 @@ async function fetchFromStratz(query, variables) {
 
       await wait(RETRY_DELAYS[attempt]);
     } catch (error) {
-      if (error.message?.startsWith("STRATZ API request failed with status")) {
+      if (
+        error.message?.startsWith("STRATZ API request failed with status") ||
+        error.message?.startsWith("STRATZ returned a non-JSON response")
+      ) {
         throw error;
       }
 
