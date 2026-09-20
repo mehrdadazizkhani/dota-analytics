@@ -5,6 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 import stratzHandler from "./api/stratz.js";
 import steamHandler from "./api/auth/steam/index.js";
 import steamCallbackHandler from "./api/auth/steam/callback.js";
+import authMeHandler from "./api/auth/me.js";
+import logoutHandler from "./api/auth/logout.js";
 
 function createResponse(res) {
   return {
@@ -16,6 +18,10 @@ function createResponse(res) {
     setHeader(name, value) {
       res.setHeader(name, value);
       return this;
+    },
+
+    end(body) {
+      res.end(body);
     },
 
     json(data) {
@@ -76,6 +82,14 @@ export default defineConfig(({ mode }) => {
 
             if (url.pathname === "/api/auth/steam/callback") {
               handler = steamCallbackHandler;
+            }
+
+            if (url.pathname === "/api/auth/me") {
+              handler = authMeHandler;
+            }
+
+            if (url.pathname === "/api/auth/logout") {
+              handler = logoutHandler;
             }
 
             if (!handler) {

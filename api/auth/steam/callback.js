@@ -38,10 +38,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const query = new URLSearchParams(req.url.split("?")[1] || "");
+    const requestUrl = new URL(
+      req.url,
+      `${req.headers["x-forwarded-proto"] || "http"}://${req.headers.host}`,
+    );
 
-    const mode = query.get("openid.mode");
-    const claimedId = query.get("openid.claimed_id");
+    const params = requestUrl.searchParams;
+
+    const mode = params.get("openid.mode");
+    const claimedId = params.get("openid.claimed_id");
 
     if (mode !== "id_res") {
       return res.status(400).json({
@@ -67,24 +72,24 @@ export default async function handler(req, res) {
 
     const steamId = steamIdMatch[1];
 
-    const verifyParams = new URLSearchParams();
+    const verificationParams = new URLSearchParams();
 
-    for (const [key, value] of query.entries()) {
-      if (key === "openid.mode") {
-        verifyParams.set("openid.mode", "check_authentication");
-      } else {
-        verifyParams.append(key, value);
-      }
+    for (const [key, value] of params.entries()) {
+      verificationParams.append(key, value);
     }
 
+    verificationParams.set("openid.mode", "check_authentication");
+
     const verificationResponse = await fetch(
-      "https://steamcommunity.com/openid/",
+      "https://steamcommunity.com/openid/login",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "text/plain",
+          "User-Agent": "Dota-Analytics",
         },
-        body: verifyParams.toString(),
+        body: verificationParams.toString(),
       },
     );
 
@@ -98,11 +103,17 @@ export default async function handler(req, res) {
       );
 
       return res.status(502).json({
-        error: "Steam authentication verification failed.",
+        error: "Steam authentication verification request failed.",
       });
     }
 
-    if (!verificationText.includes("is_valid:true")) {
+    const isValid = verificationText
+      .split(/\r?\n/)
+      .some((line) => line.trim() === "is_valid:true");
+
+    if (!isValid) {
+      console.error("Steam OpenID verification rejected:", verificationText);
+
       return res.status(401).json({
         error: "Steam authentication could not be verified.",
       });
