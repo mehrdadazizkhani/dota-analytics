@@ -13,6 +13,9 @@ const CACHE_TTL = {
   default: 60 * 1000,
 };
 
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [500, 1000, 2000];
+
 function getCacheKey(query, variables) {
   const hash = crypto.createHash("sha256");
 
@@ -56,29 +59,75 @@ function setCached(cacheKey, data, ttl) {
   });
 }
 
-async function fetchFromStratz(query, variables) {
-  const response = await fetch("https://api.stratz.com/graphql", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.STRATZ_API_KEY}`,
-      "User-Agent": "STRATZ_API",
-    },
-    body: JSON.stringify({
-      query,
-      variables,
-    }),
+function isRetryableStatus(status) {
+  return status === 429 || status >= 500;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
   });
+}
 
-  const data = await response.json();
+async function fetchFromStratz(query, variables) {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch("https://api.stratz.com/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.STRATZ_API_KEY}`,
+          "User-Agent": "STRATZ_API",
+        },
+        body: JSON.stringify({
+          query,
+          variables,
+        }),
+      });
 
-  if (!response.ok) {
-    console.error("STRATZ API error:", response.status, data);
+      const data = await response.json();
 
-    throw new Error("STRATZ API request failed");
+      if (response.ok) {
+        return data;
+      }
+
+      if (!isRetryableStatus(response.status)) {
+        console.error("STRATZ API request failed:", response.status, data);
+
+        throw new Error(
+          `STRATZ API request failed with status ${response.status}`,
+        );
+      }
+
+      if (attempt === MAX_RETRIES) {
+        console.error(
+          "STRATZ API request failed after retries:",
+          response.status,
+          data,
+        );
+
+        throw new Error(
+          `STRATZ API request failed with status ${response.status}`,
+        );
+      }
+
+      await wait(RETRY_DELAYS[attempt]);
+    } catch (error) {
+      if (error.message?.startsWith("STRATZ API request failed with status")) {
+        throw error;
+      }
+
+      if (attempt === MAX_RETRIES) {
+        console.error("STRATZ network error:", error);
+
+        throw new Error("STRATZ API network request failed");
+      }
+
+      await wait(RETRY_DELAYS[attempt]);
+    }
   }
 
-  return data;
+  throw new Error("STRATZ API request failed");
 }
 
 async function getStratzData(query, variables, cacheKey) {
@@ -137,14 +186,18 @@ export default async function handler(req, res) {
 
     const data = await getStratzData(query, variables, cacheKey);
 
+    if (data.errors?.length) {
+      return res.status(200).json(data);
+    }
+
     res.setHeader("X-Cache", wasPending ? "DEDUPED" : "MISS");
 
     return res.status(200).json(data);
   } catch (error) {
     console.error("STRATZ proxy error:", error);
 
-    return res.status(500).json({
-      error: "Internal server error",
+    return res.status(502).json({
+      error: error.message || "STRATZ API request failed",
     });
   }
 }
