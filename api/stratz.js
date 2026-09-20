@@ -1,3 +1,112 @@
+import crypto from "node:crypto";
+
+const cache = globalThis.__DOTA_ANALYTICS_STRATZ_CACHE__ || new Map();
+const pendingRequests =
+  globalThis.__DOTA_ANALYTICS_STRATZ_PENDING__ || new Map();
+
+globalThis.__DOTA_ANALYTICS_STRATZ_CACHE__ = cache;
+globalThis.__DOTA_ANALYTICS_STRATZ_PENDING__ = pendingRequests;
+
+const CACHE_TTL = {
+  heroes: 60 * 60 * 1000,
+  meta: 10 * 60 * 1000,
+  default: 60 * 1000,
+};
+
+function getCacheKey(query, variables) {
+  const hash = crypto.createHash("sha256");
+
+  hash.update(query);
+  hash.update(JSON.stringify(variables || {}));
+
+  return hash.digest("hex");
+}
+
+function getCacheTtl(query) {
+  if (query.includes("GetHeroes")) {
+    return CACHE_TTL.heroes;
+  }
+
+  if (query.includes("GetHeroMeta")) {
+    return CACHE_TTL.meta;
+  }
+
+  return CACHE_TTL.default;
+}
+
+function getCached(cacheKey) {
+  const entry = cache.get(cacheKey);
+
+  if (!entry) {
+    return null;
+  }
+
+  if (Date.now() >= entry.expiresAt) {
+    cache.delete(cacheKey);
+    return null;
+  }
+
+  return entry.data;
+}
+
+function setCached(cacheKey, data, ttl) {
+  cache.set(cacheKey, {
+    data,
+    expiresAt: Date.now() + ttl,
+  });
+}
+
+async function fetchFromStratz(query, variables) {
+  const response = await fetch("https://api.stratz.com/graphql", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.STRATZ_API_KEY}`,
+      "User-Agent": "STRATZ_API",
+    },
+    body: JSON.stringify({
+      query,
+      variables,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error("STRATZ API error:", response.status, data);
+
+    throw new Error("STRATZ API request failed");
+  }
+
+  return data;
+}
+
+async function getStratzData(query, variables, cacheKey) {
+  const pendingRequest = pendingRequests.get(cacheKey);
+
+  if (pendingRequest) {
+    return pendingRequest;
+  }
+
+  const request = fetchFromStratz(query, variables)
+    .then((data) => {
+      if (!data.errors?.length) {
+        const ttl = getCacheTtl(query);
+
+        setCached(cacheKey, data, ttl);
+      }
+
+      return data;
+    })
+    .finally(() => {
+      pendingRequests.delete(cacheKey);
+    });
+
+  pendingRequests.set(cacheKey, request);
+
+  return request;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -14,28 +123,21 @@ export default async function handler(req, res) {
       });
     }
 
-    const response = await fetch("https://api.stratz.com/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.STRATZ_API_KEY}`,
-        "User-Agent": "STRATZ_API",
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    });
+    const cacheKey = getCacheKey(query, variables);
 
-    const data = await response.json();
+    const cachedData = getCached(cacheKey);
 
-    if (!response.ok) {
-      console.error("STRATZ API error:", response.status, data);
+    if (cachedData) {
+      res.setHeader("X-Cache", "HIT");
 
-      return res.status(response.status).json({
-        error: "STRATZ API request failed",
-      });
+      return res.status(200).json(cachedData);
     }
+
+    const wasPending = pendingRequests.has(cacheKey);
+
+    const data = await getStratzData(query, variables, cacheKey);
+
+    res.setHeader("X-Cache", wasPending ? "DEDUPED" : "MISS");
 
     return res.status(200).json(data);
   } catch (error) {

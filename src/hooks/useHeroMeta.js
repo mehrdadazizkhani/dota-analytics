@@ -91,18 +91,7 @@ export function useHeroMeta(heroes) {
 
         const data = await getHeroMeta();
 
-        console.log("useHeroMeta data:", data.length);
-
-        console.log("useHeroMeta heroes:", heroes.length);
-
         const calculatedData = calculateMetaStats(data, heroes);
-
-        console.log("useHeroMeta calculated:", calculatedData.length);
-
-        console.log(
-          "useHeroMeta meta heroes:",
-          calculatedData.filter((hero) => hero.isMeta).length,
-        );
 
         if (active) {
           setMeta(calculatedData);
