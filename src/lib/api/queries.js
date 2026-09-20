@@ -99,6 +99,98 @@ export const GET_PLAYER = `
         isDotaPlusSubscriber
         seasonRank
         seasonLeaderboardRank
+
+        guild {
+          guild {
+            name
+            tag
+          }
+        }
+
+        proSteamAccount {
+          name
+          realName
+          isPro
+          totalEarnings
+          position
+
+          team {
+            id
+            tag
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_PLAYER_OVERVIEW = `
+  query GetPlayerOverview($steamAccountId: Long!) {
+    player(steamAccountId: $steamAccountId) {
+      matchCount
+      winCount
+      firstMatchDate
+
+      team {
+        team {
+          id
+          name
+          logo
+        }
+      }
+
+      heroesPerformance(
+        take: 5
+        request: { orderBy: ASC }
+      ) {
+        winCount
+        kDA
+        matchCount
+
+        hero {
+          id
+          shortName
+          displayName
+        }
+      }
+    }
+  }
+`;
+
+export const GET_PLAYER_MATCHES = `
+  query GetPlayerMatches($steamAccountId: Long!) {
+    player(steamAccountId: $steamAccountId) {
+      matches(request: { take: 15 }) {
+        id
+        durationSeconds
+        startDateTime
+        actualRank
+        lobbyType
+        bottomLaneOutcome
+        midLaneOutcome
+        topLaneOutcome
+
+        league {
+          id
+          displayName
+        }
+
+        players(steamAccountId: $steamAccountId) {
+          kills
+          deaths
+          assists
+          partyId
+          lane
+          position
+          imp
+          isVictory
+          award
+
+          hero {
+            displayName
+            shortName
+          }
+        }
       }
     }
   }

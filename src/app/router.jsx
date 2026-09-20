@@ -37,6 +37,10 @@ const router = createBrowserRouter([
         element: <Players />,
       },
       {
+        path: "/players/:accountId",
+        element: <Players />,
+      },
+      {
         path: "/matches",
         element: <Matches />,
       },

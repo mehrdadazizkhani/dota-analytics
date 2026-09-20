@@ -70,21 +70,17 @@ function wait(ms) {
   });
 }
 
-const data = await parseStratzResponse(response);
+async function parseStratzResponse(response) {
+  const text = await response.text();
 
-if (data?.__nonJsonResponse) {
-  console.error(
-    "STRATZ returned a non-JSON response:",
-    response.status,
-    data.text,
-  );
-
-  throw new Error(
-    `STRATZ returned a non-JSON response with status ${response.status}: ${data.text.slice(
-      0,
-      500,
-    )}`,
-  );
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      __nonJsonResponse: true,
+      text,
+    };
+  }
 }
 
 async function fetchFromStratz(query, variables) {

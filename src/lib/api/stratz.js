@@ -1,6 +1,18 @@
-import { GET_HEROES, GET_HERO, GET_HERO_META, GET_PLAYER } from "./queries";
+import {
+  GET_HEROES,
+  GET_HERO,
+  GET_HERO_META,
+  GET_PLAYER,
+  GET_PLAYER_OVERVIEW,
+  GET_PLAYER_MATCHES,
+} from "./queries";
 
-import { normalizeHeroes, normalizePlayer } from "./normalizers";
+import {
+  normalizeHeroes,
+  normalizePlayer,
+  normalizePlayerOverview,
+  normalizePlayerMatches,
+} from "./normalizers";
 
 async function requestStratz(query, variables = {}) {
   const response = await fetch("/api/stratz", {
@@ -105,4 +117,32 @@ export async function getPlayer(steamAccountId) {
   });
 
   return normalizePlayer(data.player);
+}
+
+export async function getPlayerOverview(steamAccountId) {
+  const numericSteamAccountId = Number(steamAccountId);
+
+  if (!Number.isSafeInteger(numericSteamAccountId)) {
+    throw new Error("Invalid Steam account ID.");
+  }
+
+  const data = await requestStratz(GET_PLAYER_OVERVIEW, {
+    steamAccountId: numericSteamAccountId,
+  });
+
+  return normalizePlayerOverview(data.player);
+}
+
+export async function getPlayerMatches(steamAccountId) {
+  const numericSteamAccountId = Number(steamAccountId);
+
+  if (!Number.isSafeInteger(numericSteamAccountId)) {
+    throw new Error("Invalid Steam account ID.");
+  }
+
+  const data = await requestStratz(GET_PLAYER_MATCHES, {
+    steamAccountId: numericSteamAccountId,
+  });
+
+  return normalizePlayerMatches(data.player?.matches || []);
 }
