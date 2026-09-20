@@ -28,9 +28,7 @@ const ATTRIBUTE_GROUPS = [
 ];
 
 function getHeroAttribute(hero) {
-  const attribute = String(
-    hero.stats?.primaryAttributeEnum || hero.stats?.primaryAttribute || "",
-  ).toUpperCase();
+  const attribute = String(hero.primaryAttribute || "").toUpperCase();
 
   if (attribute.includes("STRENGTH") || attribute === "STR") {
     return "STRENGTH";

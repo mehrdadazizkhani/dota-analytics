@@ -29,14 +29,14 @@ function matchesHero(hero, filters) {
     !search ||
     searchableValues.some((value) => normalize(value).includes(search));
 
-  const attackType = normalize(hero.stats?.attackType);
+  const attackType = normalize(hero.attackType);
 
   const matchesAttackType =
     !filters.attackType || attackType === normalize(filters.attackType);
 
   const matchesComplexity =
     !filters.complexity ||
-    Number(hero.stats?.complexity) === Number(filters.complexity);
+    Number(hero.complexity) === Number(filters.complexity);
 
   const heroRoles =
     hero.roles?.map((role) => String(role.roleId || "").toUpperCase()) || [];

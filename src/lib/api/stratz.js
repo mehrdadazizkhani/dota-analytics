@@ -1,4 +1,5 @@
 import { GET_HEROES, GET_HERO, GET_HERO_META } from "./queries";
+import { normalizeHeroes } from "./normalizers";
 
 async function requestStratz(query, variables = {}) {
   const response = await fetch("/api/stratz", {
@@ -30,7 +31,7 @@ async function requestStratz(query, variables = {}) {
 export async function getHeroes() {
   const data = await requestStratz(GET_HEROES);
 
-  return data.constants.heroes;
+  return normalizeHeroes(data.constants.heroes);
 }
 
 export async function getHero(heroId) {

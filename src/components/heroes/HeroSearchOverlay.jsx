@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
-const FADE_DELAY = 1000;
-const FADE_DURATION = 500;
-const CLEAR_AFTER_FADE = 500;
+const FADE_DELAY = 900;
+const FADE_DURATION = 350;
+const CLEAR_AFTER_FADE = 0;
 
 function HeroSearchOverlay({ search, setSearch }) {
   const [displayText, setDisplayText] = useState(search);
