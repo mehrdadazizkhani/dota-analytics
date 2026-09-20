@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { usePlayer } from "../hooks/usePlayer";
 import { usePlayerOverview } from "../hooks/usePlayerOverview";
 import { usePlayerMatches } from "../hooks/usePlayerMatches";
-
+import PlayerFilters from "../components/players/PlayerFilters";
 import PlayerHeader from "../components/players/PlayerHeader";
 import PlayerOverview from "../components/players/PlayerOverview";
 import PlayerHeroPerformance from "../components/players/PlayerHeroPerformance";
@@ -129,7 +129,7 @@ function PlayerProfile({ accountId }) {
       </div>
 
       <PlayerHeader player={player} />
-
+      <PlayerFilters />
       <PlayerOverview overview={overview} />
 
       <PlayerHeroPerformance heroes={overview?.heroesPerformance} />
