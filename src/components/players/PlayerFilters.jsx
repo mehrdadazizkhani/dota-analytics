@@ -52,27 +52,27 @@ function PlayerFilters({ filters, setFilters }) {
           placeholder="All Positions"
           options={[
             {
-              value: 1,
+              value: "POSITION_1",
               label: "Safe Lane",
               icon: <SafelaneIcon />,
             },
             {
-              value: 2,
+              value: "POSITION_2",
               label: "Mid Lane",
               icon: <MidlaneIcon />,
             },
             {
-              value: 3,
+              value: "POSITION_3",
               label: "Off Lane",
               icon: <OfflaneIcon />,
             },
             {
-              value: 4,
+              value: "POSITION_4",
               label: "Soft Support",
               icon: <SoftSupportIcon />,
             },
             {
-              value: 5,
+              value: "POSITION_5",
               label: "Hard Support",
               icon: <HardSupportIcon />,
             },
