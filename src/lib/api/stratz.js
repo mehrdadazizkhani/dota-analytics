@@ -133,15 +133,53 @@ export async function getPlayerOverview(steamAccountId) {
   return normalizePlayerOverview(data.player);
 }
 
-export async function getPlayerMatches(steamAccountId) {
+export async function getPlayerMatches(steamAccountId, filters = {}) {
   const numericSteamAccountId = Number(steamAccountId);
 
   if (!Number.isSafeInteger(numericSteamAccountId)) {
     throw new Error("Invalid Steam account ID.");
   }
 
+  const request = {
+    take: 100,
+    positionIds: [],
+    heroIds: [],
+    gameModeIds: [],
+    startDateTime: null,
+  };
+
+  // Position filter
+  if (filters.position && filters.position !== "ALL") {
+    request.positionIds = filters.positionIds;
+  }
+
+  // Hero filter
+  if (filters.hero && filters.hero !== "ALL") {
+    request.heroIds = filters.heroIds;
+  }
+
+  // Time filter
+  if (filters.time && filters.time !== "ALL") {
+    const now = Math.floor(Date.now() / 1000);
+
+    const days = Number(filters.time);
+
+    if (days > 0) {
+      request.startDateTime = now - days * 24 * 60 * 60;
+    }
+  }
+
+  // Ranked only
+  if (filters.rankedOnly) {
+    request.gameModeIds = [
+      // Ranked game modes
+      1, 2, 4, 22,
+    ];
+  }
+
   const data = await requestStratz(GET_PLAYER_MATCHES, {
     steamAccountId: numericSteamAccountId,
+    request,
   });
 
   return normalizePlayerMatches(data.player?.matches || []);

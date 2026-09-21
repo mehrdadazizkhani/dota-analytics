@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Select from "../ui/Select";
 import Toggle from "../ui/Toggle";
 
@@ -10,16 +9,7 @@ import {
   HardSupportIcon,
 } from "../icons/PositionIcons";
 
-function PlayerFilters() {
-  const [filters, setFilters] = useState({
-    limit: 25,
-    position: "ALL",
-    mode: "ALL",
-    hero: "ALL",
-    time: "ALL",
-    excludeTurbo: true,
-  });
-
+function PlayerFilters({ filters, setFilters }) {
   function updateFilter(key, value) {
     setFilters((prev) => ({
       ...prev,
@@ -30,7 +20,7 @@ function PlayerFilters() {
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <div className="flex flex-wrap items-center gap-3">
-        {/* Match Count */}
+        {/* Match Count - LOCAL ONLY */}
         <Select
           value={filters.limit}
           onChange={(value) => updateFilter("limit", value)}
@@ -54,9 +44,9 @@ function PlayerFilters() {
           ]}
         />
 
-        {/* Position */}
+        {/* Position - SERVER */}
         <Select
-          value={filters.position}
+          value={filters.positionIds}
           onChange={(value) => updateFilter("position", value)}
           options={[
             {
@@ -91,7 +81,7 @@ function PlayerFilters() {
           ]}
         />
 
-        {/* Mode */}
+        {/* Mode - LOCAL */}
         <Select
           value={filters.mode}
           onChange={(value) => updateFilter("mode", value)}
@@ -111,7 +101,7 @@ function PlayerFilters() {
           ]}
         />
 
-        {/* Time */}
+        {/* Time - SERVER */}
         <Select
           value={filters.time}
           onChange={(value) => updateFilter("time", value)}
@@ -139,10 +129,10 @@ function PlayerFilters() {
           ]}
         />
 
-        {/* Hero */}
+        {/* Hero - SERVER */}
         <Select
           searchable
-          value={filters.hero}
+          value={filters.heroIds}
           onChange={(value) => updateFilter("hero", value)}
           options={[
             {
@@ -152,11 +142,11 @@ function PlayerFilters() {
           ]}
         />
 
-        {/* Turbo Toggle */}
+        {/* Ranked Only - SERVER */}
         <Toggle
-          label="Exclude Turbo"
-          checked={filters.excludeTurbo}
-          onChange={(value) => updateFilter("excludeTurbo", value)}
+          label="Ranked Matches Only"
+          checked={filters.rankedOnly}
+          onChange={(value) => updateFilter("rankedOnly", value)}
         />
       </div>
     </section>

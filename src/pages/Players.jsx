@@ -1,9 +1,11 @@
 import { Navigate, useParams } from "react-router-dom";
+import { useState } from "react";
 
 import { useAuth } from "../hooks/useAuth";
 import { usePlayer } from "../hooks/usePlayer";
 import { usePlayerOverview } from "../hooks/usePlayerOverview";
 import { usePlayerMatches } from "../hooks/usePlayerMatches";
+
 import PlayerFilters from "../components/players/PlayerFilters";
 import PlayerHeader from "../components/players/PlayerHeader";
 import PlayerOverview from "../components/players/PlayerOverview";
@@ -20,15 +22,7 @@ function Players() {
   } = useAuth();
 
   if (authLoading) {
-    return (
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Players
-        </h1>
-
-        <p className="mt-1 text-sm text-white/50">Loading player data...</p>
-      </div>
-    );
+    return <div>Loading player data...</div>;
   }
 
   if (!routeAccountId) {
@@ -38,9 +32,7 @@ function Players() {
 
     return (
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Players
-        </h1>
+        <h1 className="text-2xl font-semibold text-white">Players</h1>
 
         <p className="mt-1 text-sm text-white/50">
           Sign in with Steam or open a player profile by account ID.
@@ -49,12 +41,23 @@ function Players() {
     );
   }
 
-  const accountId = routeAccountId;
-
-  return <PlayerProfile accountId={accountId} />;
+  return <PlayerProfile accountId={routeAccountId} />;
 }
 
 function PlayerProfile({ accountId }) {
+  const [filters, setFilters] = useState({
+    limit: "25",
+
+    positionIds: [],
+    heroIds: [],
+
+    time: "ALL",
+
+    mode: "ALL",
+
+    rankedOnly: true,
+  });
+
   const {
     player,
     loading: playerLoading,
@@ -71,33 +74,19 @@ function PlayerProfile({ accountId }) {
     matches,
     loading: matchesLoading,
     error: matchesError,
-  } = usePlayerMatches(accountId);
+  } = usePlayerMatches(accountId, filters);
 
   if (playerLoading || overviewLoading || matchesLoading) {
-    return (
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Player
-        </h1>
-
-        <p className="mt-1 text-sm text-white/50">Loading player data...</p>
-      </div>
-    );
+    return <div>Loading player data...</div>;
   }
 
   if (playerError || overviewError || matchesError) {
     return (
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Player
-        </h1>
-
-        <p className="mt-1 text-sm text-red-400">
-          {playerError ||
-            overviewError ||
-            matchesError ||
-            "Failed to load player data."}
-        </p>
+      <div className="text-red-400">
+        {playerError ||
+          overviewError ||
+          matchesError ||
+          "Failed to load player data."}
       </div>
     );
   }
@@ -105,11 +94,9 @@ function PlayerProfile({ accountId }) {
   if (!player) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Private Profile
-        </h1>
+        <h1 className="text-2xl text-white">Private Profile</h1>
 
-        <p className="mt-1 text-sm text-white/50">
+        <p className="text-white/50">
           This player's profile is private or unavailable.
         </p>
       </div>
@@ -119,9 +106,7 @@ function PlayerProfile({ accountId }) {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Player
-        </h1>
+        <h1 className="text-2xl font-semibold text-white">Player</h1>
 
         <p className="mt-1 text-sm text-white/50">
           Player profile and Dota 2 analytics.
@@ -129,12 +114,14 @@ function PlayerProfile({ accountId }) {
       </div>
 
       <PlayerHeader player={player} />
-      <PlayerFilters />
+
+      <PlayerFilters filters={filters} setFilters={setFilters} />
+
       <PlayerOverview overview={overview} />
 
       <PlayerHeroPerformance heroes={overview?.heroesPerformance} />
 
-      <PlayerRecentMatches matches={matches} />
+      <PlayerRecentMatches matches={matches.slice(0, Number(filters.limit))} />
     </div>
   );
 }

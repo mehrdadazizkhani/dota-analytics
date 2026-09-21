@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getPlayerMatches } from "../lib/api/stratz";
 
-export function usePlayerMatches(accountId) {
+export function usePlayerMatches(accountId, filters = {}) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -21,7 +21,7 @@ export function usePlayerMatches(accountId) {
       setError(null);
 
       try {
-        const data = await getPlayerMatches(accountId);
+        const data = await getPlayerMatches(accountId, filters);
 
         if (cancelled) {
           return;
@@ -47,7 +47,13 @@ export function usePlayerMatches(accountId) {
     return () => {
       cancelled = true;
     };
-  }, [accountId]);
+  }, [
+    accountId,
+    JSON.stringify(filters.positionIds),
+    JSON.stringify(filters.heroIds),
+    filters.time,
+    filters.rankedOnly,
+  ]);
 
   return {
     matches,

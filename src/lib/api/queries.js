@@ -158,9 +158,12 @@ export const GET_PLAYER_OVERVIEW = `
 `;
 
 export const GET_PLAYER_MATCHES = `
-  query GetPlayerMatches($steamAccountId: Long!) {
+  query GetPlayerMatches(
+    $steamAccountId: Long!
+    $request: PlayerMatchesRequestType!
+  ) {
     player(steamAccountId: $steamAccountId) {
-      matches(request: { take: 15 }) {
+      matches(request: $request) {
         id
         durationSeconds
         startDateTime

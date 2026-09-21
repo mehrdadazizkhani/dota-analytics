@@ -30,6 +30,7 @@ export function normalizeHero(hero) {
     hero.stats?.primaryAttributeEnum || hero.stats?.primaryAttribute || null;
 
   const attackType = hero.stats?.attackType || null;
+
   const complexity = Number(hero.stats?.complexity || 0);
 
   return {
@@ -37,10 +38,15 @@ export function normalizeHero(hero) {
     name: hero.name || "",
     displayName: hero.displayName || "",
     shortName: hero.shortName || "",
+
     aliases: normalizeAliases(hero.aliases),
+
     roles: normalizeRoles(hero.roles),
+
     primaryAttribute,
+
     attackType,
+
     complexity,
   };
 }
@@ -85,9 +91,13 @@ function normalizeProPlayer(proSteamAccount) {
   return {
     name: proSteamAccount.name || "",
     realName: proSteamAccount.realName || "",
+
     isPro: Boolean(proSteamAccount.isPro),
+
     totalEarnings: Number(proSteamAccount.totalEarnings || 0),
+
     position: proSteamAccount.position || null,
+
     team: normalizeTeam(proSteamAccount.team),
   };
 }
@@ -101,10 +111,15 @@ export function normalizePlayer(player) {
 
   return {
     accountId: Number(steamAccount.id) || null,
+
     name: steamAccount.name || "",
+
     avatar: steamAccount.avatar || "",
+
     isDotaPlusSubscriber: Boolean(steamAccount.isDotaPlusSubscriber),
+
     seasonRank: Number(steamAccount.seasonRank || 0),
+
     seasonLeaderboardRank:
       Number(steamAccount.seasonLeaderboardRank || 0) || null,
 
@@ -132,22 +147,32 @@ export function normalizePlayerMatches(matches) {
   }
 
   return matches
+
     .map((match) => ({
       id: Number(match.id) || null,
+
       durationSeconds: Number(match.durationSeconds || 0),
+
       startDateTime: match.startDateTime || null,
+
       actualRank: Number(match.actualRank || 0) || null,
+
       lobbyType: match.lobbyType || null,
+
+      gameMode: match.gameMode || null,
 
       laneOutcome: {
         bottom: match.bottomLaneOutcome || null,
+
         mid: match.midLaneOutcome || null,
+
         top: match.topLaneOutcome || null,
       },
 
       league: match.league
         ? {
             id: Number(match.league.id) || null,
+
             displayName: match.league.displayName || "",
           }
         : null,
@@ -156,6 +181,7 @@ export function normalizePlayerMatches(matches) {
         Array.isArray(match.players) ? match.players[0] : null,
       ),
     }))
+
     .filter((match) => match.id);
 }
 
@@ -166,18 +192,27 @@ function normalizeMatchPlayer(player) {
 
   return {
     kills: Number(player.kills || 0),
+
     deaths: Number(player.deaths || 0),
+
     assists: Number(player.assists || 0),
+
     partyId: Number(player.partyId || 0) || null,
+
     lane: player.lane || null,
+
     position: player.position || null,
+
     imp: Number(player.imp || 0),
+
     isVictory: Boolean(player.isVictory),
+
     award: player.award || null,
 
     hero: player.hero
       ? {
           displayName: player.hero.displayName || "",
+
           shortName: player.hero.shortName || "",
         }
       : null,
