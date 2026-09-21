@@ -10,14 +10,25 @@ import {
   HardSupportIcon,
 } from "../icons/PositionIcons";
 
-function PlayerFilters({ filters, setFilters }) {
+function PlayerFilters({ filters, setFilters, heroes = [] }) {
   function updateFilter(key, value) {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
     }));
   }
+  const heroOptions = heroes.map((hero) => ({
+    value: hero.id,
+    label: hero.displayName,
 
+    icon: (
+      <img
+        src={`https://cdn.stratz.com/images/dota2/heroes/${hero.shortName}_icon.png`}
+        className="h-6 w-6 rounded"
+        alt={hero.displayName}
+      />
+    ),
+  }));
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -133,7 +144,7 @@ function PlayerFilters({ filters, setFilters }) {
           value={filters.heroIds}
           onChange={(value) => updateFilter("heroIds", value)}
           placeholder="All Heroes"
-          options={[]}
+          options={heroOptions}
         />
 
         {/* Ranked Only - SERVER */}
