@@ -17,9 +17,11 @@ function PlayerFilters({ filters, setFilters, heroes = [] }) {
       [key]: value,
     }));
   }
+
   const heroOptions = heroes.map((hero) => ({
     value: hero.id,
     label: hero.displayName,
+    aliases: hero.aliases || [],
 
     icon: (
       <img
@@ -29,6 +31,7 @@ function PlayerFilters({ filters, setFilters, heroes = [] }) {
       />
     ),
   }));
+
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -141,6 +144,8 @@ function PlayerFilters({ filters, setFilters, heroes = [] }) {
         {/* Hero - SERVER */}
         <MultiSelect
           searchable
+          initialLimit={8}
+          searchFields={["aliases"]}
           value={filters.heroIds}
           onChange={(value) => updateFilter("heroIds", value)}
           placeholder="All Heroes"

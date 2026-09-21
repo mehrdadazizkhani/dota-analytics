@@ -5,6 +5,8 @@ function MultiSelect({
   onChange,
   options = [],
   searchable = false,
+  searchFields = [],
+  initialLimit = null,
   placeholder = "",
   className = "",
 }) {
@@ -17,11 +19,34 @@ function MultiSelect({
     value.includes(option.value),
   );
 
-  const filteredOptions = searchable
-    ? options.filter((option) =>
-        option.label.toLowerCase().includes(search.toLowerCase()),
-      )
-    : options;
+  const filteredOptions = (() => {
+    let result = options;
+
+    if (searchable && search.trim()) {
+      const query = search.toLowerCase();
+
+      result = options.filter((option) => {
+        const fields = [
+          option.label,
+          ...searchFields.map((field) => option[field] || []),
+        ];
+
+        return fields.some((field) => {
+          if (Array.isArray(field)) {
+            return field.some((item) => item.toLowerCase().includes(query));
+          }
+
+          return String(field).toLowerCase().includes(query);
+        });
+      });
+    }
+
+    if (initialLimit && !search.trim()) {
+      return result.slice(0, initialLimit);
+    }
+
+    return result;
+  })();
 
   useEffect(() => {
     function handleClickOutside(event) {
