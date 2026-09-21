@@ -47,7 +47,7 @@ function PlayerFilters({ filters, setFilters }) {
         {/* Position - SERVER */}
         <Select
           value={filters.positionIds}
-          onChange={(value) => updateFilter("position", value)}
+          onChange={(value) => updateFilter("positionIds", value)}
           options={[
             {
               value: "ALL",
@@ -133,7 +133,7 @@ function PlayerFilters({ filters, setFilters }) {
         <Select
           searchable
           value={filters.heroIds}
-          onChange={(value) => updateFilter("hero", value)}
+          onChange={(value) => updateFilter("heroIds", value)}
           options={[
             {
               value: "ALL",
