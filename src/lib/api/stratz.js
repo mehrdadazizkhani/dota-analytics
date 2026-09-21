@@ -149,12 +149,12 @@ export async function getPlayerMatches(steamAccountId, filters = {}) {
   };
 
   // Position filter
-  if (filters.position && filters.position !== "ALL") {
+  if (filters.positionIds?.length > 0) {
     request.positionIds = filters.positionIds;
   }
 
   // Hero filter
-  if (filters.hero && filters.hero !== "ALL") {
+  if (filters.heroIds?.length > 0) {
     request.heroIds = filters.heroIds;
   }
 
