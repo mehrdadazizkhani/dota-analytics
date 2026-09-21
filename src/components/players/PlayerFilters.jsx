@@ -1,5 +1,6 @@
 import Select from "../ui/Select";
 import Toggle from "../ui/Toggle";
+import MultiSelect from "../ui/MultiSelect";
 
 import {
   OfflaneIcon,
@@ -45,43 +46,40 @@ function PlayerFilters({ filters, setFilters }) {
         />
 
         {/* Position - SERVER */}
-        <Select
+        <MultiSelect
           value={filters.positionIds}
           onChange={(value) => updateFilter("positionIds", value)}
+          placeholder="All Positions"
           options={[
             {
-              value: "ALL",
-              label: "All Positions",
-            },
-            {
-              value: "POSITION_1",
+              value: 1,
               label: "Safe Lane",
               icon: <SafelaneIcon />,
             },
             {
-              value: "POSITION_2",
+              value: 2,
               label: "Mid Lane",
               icon: <MidlaneIcon />,
             },
             {
-              value: "POSITION_3",
+              value: 3,
               label: "Off Lane",
               icon: <OfflaneIcon />,
             },
             {
-              value: "POSITION_4",
+              value: 4,
               label: "Soft Support",
               icon: <SoftSupportIcon />,
             },
             {
-              value: "POSITION_5",
+              value: 5,
               label: "Hard Support",
               icon: <HardSupportIcon />,
             },
           ]}
         />
 
-        {/* Mode - LOCAL */}
+        {/* Mode - SERVER */}
         <Select
           value={filters.mode}
           onChange={(value) => updateFilter("mode", value)}
@@ -130,16 +128,12 @@ function PlayerFilters({ filters, setFilters }) {
         />
 
         {/* Hero - SERVER */}
-        <Select
+        <MultiSelect
           searchable
           value={filters.heroIds}
           onChange={(value) => updateFilter("heroIds", value)}
-          options={[
-            {
-              value: "ALL",
-              label: "All Heroes",
-            },
-          ]}
+          placeholder="All Heroes"
+          options={[]}
         />
 
         {/* Ranked Only - SERVER */}
