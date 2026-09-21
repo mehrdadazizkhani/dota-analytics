@@ -11,6 +11,7 @@ import PlayerHeader from "../components/players/PlayerHeader";
 import PlayerOverview from "../components/players/PlayerOverview";
 import PlayerHeroPerformance from "../components/players/PlayerHeroPerformance";
 import PlayerRecentMatches from "../components/players/PlayerRecentMatches";
+import { useHeroes } from "../hooks/useHeroes";
 
 function Players() {
   const { accountId: routeAccountId } = useParams();
@@ -57,6 +58,8 @@ function PlayerProfile({ accountId }) {
 
     rankedOnly: true,
   });
+
+  const { heroes, loading: heroesLoading, error: heroesError } = useHeroes();
 
   const {
     player,
@@ -115,7 +118,11 @@ function PlayerProfile({ accountId }) {
 
       <PlayerHeader player={player} />
 
-      <PlayerFilters filters={filters} setFilters={setFilters} />
+      <PlayerFilters
+        filters={filters}
+        setFilters={setFilters}
+        heroes={heroes}
+      />
 
       <PlayerOverview overview={overview} />
 
