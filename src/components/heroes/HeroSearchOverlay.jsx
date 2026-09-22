@@ -102,7 +102,7 @@ function HeroSearchOverlay({ search, setSearch }) {
     return null;
   }
   return (
-    <div className="pointer-events-none fixed inset-0 z-40 hidden items-center justify-center md:flex">
+    <div className="pointer-events-none fixed inset-0 z-200 hidden items-center justify-center md:flex">
       {" "}
       <div
         className={`relative select-none transition-all ease-out ${isFading ? "scale-[1.04] opacity-0 blur-[10px]" : isPulsing ? "scale-[1.015] opacity-100 blur-0" : "scale-100 opacity-100 blur-0"}`}

@@ -4,8 +4,7 @@ const navigation = [
   { label: "Overview", path: "/" },
   { label: "Heroes", path: "/heroes" },
   { label: "Players", path: "/players" },
-  { label: "Matches", path: "/matches" },
-  { label: "Analysis", path: "/analysis" },
+  { label: "Draft Lab", path: "/draft-lab" },
 ];
 
 function Sidebar() {

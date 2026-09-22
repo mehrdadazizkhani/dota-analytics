@@ -8,6 +8,7 @@ export function getHeroAsset(hero, type = "portrait") {
   const suffixes = {
     icon: "_icon.png",
     portrait: "_vert.png",
+    landscape: "_horz.png",
     model: "_model.png",
   };
 

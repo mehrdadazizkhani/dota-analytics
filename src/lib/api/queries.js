@@ -198,3 +198,47 @@ export const GET_PLAYER_MATCHES = `
     }
   }
 `;
+
+export const GET_DRAFT_DATA = (bracket) => `
+  query GetDraftData {
+    heroStats {
+      stats(bracketBasicIds: ${bracket}) {
+        heroId
+        winCount
+        disableCount
+        stunCount
+        kDAAverage
+        killContributionAverage
+      }
+
+      matchUp(bracketBasicIds: ${bracket}) {
+        heroId
+
+        with {
+          heroId1
+          heroId2
+          winRateHeroId1
+          winRateHeroId2
+          matchCount
+          winCount
+          winsAverage
+          synergy
+        }
+
+        vs {
+          heroId1
+          heroId2
+          winRateHeroId1
+          winRateHeroId2
+          matchCount
+          winCount
+          winsAverage
+          synergy
+        }
+
+        matchCountWith
+        matchCountVs
+      }
+    }
+  }
+`;

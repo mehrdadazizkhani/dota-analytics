@@ -5,6 +5,7 @@ import {
   GET_PLAYER,
   GET_PLAYER_OVERVIEW,
   GET_PLAYER_MATCHES,
+  GET_DRAFT_DATA,
 } from "./queries";
 
 import {
@@ -195,4 +196,22 @@ export async function getPlayerMatches(steamAccountId, filters = {}) {
   });
 
   return normalizePlayerMatches(data.player?.matches || []);
+}
+
+export async function getDraftData(bracket) {
+  const allowedBrackets = [
+    "HERALD_GUARDIAN",
+    "CRUSADER_ARCHON",
+    "LEGEND_ANCIENT",
+    "DIVINE_IMMORTAL",
+    "ALL",
+  ];
+
+  if (!allowedBrackets.includes(bracket)) {
+    throw new Error("Invalid draft bracket.");
+  }
+
+  const data = await requestStratz(GET_DRAFT_DATA(bracket));
+
+  return data.heroStats;
 }

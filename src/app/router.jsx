@@ -5,8 +5,7 @@ import Overview from "../pages/Overview";
 import Heroes from "../pages/Heroes";
 import HeroDetail from "../pages/HeroDetail";
 import Players from "../pages/Players";
-import Matches from "../pages/Matches";
-import Analysis from "../pages/Analysis";
+import DraftLab from "../pages/DraftLab";
 
 function Layout() {
   return (
@@ -41,12 +40,8 @@ const router = createBrowserRouter([
         element: <Players />,
       },
       {
-        path: "/matches",
-        element: <Matches />,
-      },
-      {
-        path: "/analysis",
-        element: <Analysis />,
+        path: "/draft-lab",
+        element: <DraftLab />,
       },
     ],
   },
