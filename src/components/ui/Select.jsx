@@ -45,93 +45,120 @@ function Select({
 
   return (
     <div ref={ref} className={`relative ${className}`}>
-      {/* Button */}
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex min-w-[150px] cursor-pointer items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#11141b] px-4 py-2.5 text-sm text-white/80 transition hover:border-white/20"
+        className={`group flex min-w-[150px] cursor-pointer items-center justify-between gap-3 rounded-md border px-3 py-2 text-[11px] font-medium transition-all duration-150 ${
+          open
+            ? "border-red-500/25 bg-red-500/[0.05] text-white"
+            : "border-white/[0.07] bg-white/[0.025] text-white/45 hover:border-white/[0.13] hover:bg-white/[0.04] hover:text-white/70"
+        }`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           {selected?.icon && (
-            <span className="flex h-4 w-4 items-center justify-center text-white/60">
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center text-white/45">
               {selected.icon}
             </span>
           )}
 
-          <span>{selected?.label || placeholder}</span>
+          <span className="truncate">{selected?.label || placeholder}</span>
         </div>
 
         <svg
-          className={`h-4 w-4 text-white/40 transition ${
-            open ? "rotate-180" : ""
+          className={`h-3.5 w-3.5 shrink-0 text-white/25 transition-transform duration-150 ${
+            open ? "rotate-180 text-red-400/70" : ""
           }`}
           viewBox="0 0 20 20"
           fill="currentColor"
         >
           <path
             fillRule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a1.04 1.04 0 011.08 1.04l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z"
             clipRule="evenodd"
           />
         </svg>
       </button>
 
-      {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#11141b] p-1 shadow-2xl shadow-black/40">
+        <div className="absolute left-0 top-full z-50 mt-1.5 w-full min-w-[190px] overflow-hidden rounded-md border border-white/[0.08] bg-[#080808] shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
           {searchable && (
-            <div className="p-1">
-              <input
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search hero..."
-                className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/20"
-              />
+            <div className="border-b border-white/[0.06] p-2">
+              <div className="relative">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/20"
+                >
+                  <path
+                    d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search hero..."
+                  className="h-8 w-full rounded border border-white/[0.07] bg-white/[0.025] pl-8 pr-2 text-[11px] text-white outline-none transition placeholder:text-white/20 focus:border-red-500/20 focus:bg-white/[0.04]"
+                />
+              </div>
             </div>
           )}
 
-          <div className="max-h-72 overflow-y-auto">
+          <div className="max-h-72 overflow-y-auto p-1">
             {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleSelect(option)}
-                  className={`flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition ${
-                    option.value === value
-                      ? "bg-white/[0.08] text-white"
-                      : "text-white/60 hover:bg-white/[0.05] hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {option.icon && (
-                      <span className="flex h-4 w-4 items-center justify-center text-white/60">
-                        {option.icon}
+              filteredOptions.map((option) => {
+                const selectedOption = option.value === value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleSelect(option)}
+                    className={`flex w-full cursor-pointer items-center justify-between rounded px-2.5 py-2 text-left transition-all duration-100 ${
+                      selectedOption
+                        ? "bg-red-500/[0.07] text-white"
+                        : "text-white/45 hover:bg-white/[0.035] hover:text-white/80"
+                    }`}
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      {option.icon && (
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm text-white/45">
+                          {option.icon}
+                        </span>
+                      )}
+
+                      <span className="truncate text-[11px]">
+                        {option.label}
+                      </span>
+                    </div>
+
+                    {selectedOption && (
+                      <span className="ml-3 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm bg-red-400/90">
+                        <svg
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          className="h-2.5 w-2.5 text-black"
+                        >
+                          <path
+                            d="m4.5 10 3.5 3.5 7.5-7.5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
                       </span>
                     )}
-
-                    <span>{option.label}</span>
-                  </div>
-
-                  {option.value === value && (
-                    <svg
-                      className="h-4 w-4 text-emerald-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 011.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))
+                  </button>
+                );
+              })
             ) : (
-              <div className="px-3 py-3 text-sm text-white/30">
-                No results found
+              <div className="px-3 py-5 text-center text-[10px] uppercase tracking-[0.12em] text-white/20">
+                No results
               </div>
             )}
           </div>

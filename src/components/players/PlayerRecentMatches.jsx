@@ -57,37 +57,41 @@ function PlayerRecentMatches({ matches }) {
   return (
     <section>
       <div className="mb-4">
-        <h2 className="text-lg font-semibold tracking-tight text-white">
-          Recent Matches
-        </h2>
+        <div className="flex items-center gap-2">
+          <span className="h-1 w-1 rounded-full bg-red-400" />
 
-        <p className="mt-1 text-sm text-white/40">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
+            Recent Matches
+          </h2>
+        </div>
+
+        <p className="mt-1.5 text-[10px] text-white/25">
           Your latest Dota 2 matches.
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+      <div className="overflow-hidden rounded-lg border border-white/[0.07] bg-[#050505]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left">
-            <thead className="border-b border-white/10 bg-white/[0.02]">
-              <tr className="text-xs text-white/40">
-                <th className="px-5 py-4 font-medium">Hero</th>
+            <thead className="border-b border-white/[0.06] bg-white/[0.015]">
+              <tr className="text-[9px] uppercase tracking-[0.14em] text-white/25">
+                <th className="px-4 py-3 font-medium">Hero</th>
 
-                <th className="px-5 py-4 font-medium">Result</th>
+                <th className="px-4 py-3 font-medium">Result</th>
 
-                <th className="px-5 py-4 font-medium">K / D / A</th>
+                <th className="px-4 py-3 font-medium">K / D / A</th>
 
-                <th className="px-5 py-4 font-medium">IMP</th>
+                <th className="px-4 py-3 font-medium">IMP</th>
 
-                <th className="px-5 py-4 font-medium">Position</th>
+                <th className="px-4 py-3 font-medium">Position</th>
 
-                <th className="px-5 py-4 font-medium">Duration</th>
+                <th className="px-4 py-3 font-medium">Duration</th>
 
-                <th className="px-5 py-4 font-medium">Date</th>
+                <th className="px-4 py-3 font-medium">Date</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-white/[0.04]">
               {matches.map((match) => {
                 const player = match.player;
                 const hero = player?.hero;
@@ -95,75 +99,75 @@ function PlayerRecentMatches({ matches }) {
                 return (
                   <tr
                     key={match.id}
-                    className="transition-colors hover:bg-white/[0.03]"
+                    className="transition-colors duration-150 hover:bg-white/[0.025]"
                   >
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {hero?.shortName ? (
                           <img
                             src={`https://cdn.stratz.com/images/dota2/heroes/${hero.shortName}_icon.png`}
                             alt={hero.displayName}
-                            className="h-10 w-10 rounded-lg object-cover"
+                            className="h-8 w-8 rounded-md object-cover ring-1 ring-white/[0.08]"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-lg bg-white/5" />
+                          <div className="h-8 w-8 rounded-md bg-white/[0.04]" />
                         )}
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-white">
+                          <p className="truncate text-[11px] font-medium text-white/75">
                             {hero?.displayName || "Unknown Hero"}
                           </p>
 
-                          <p className="text-xs text-white/30">
-                            Match #{match.id}
+                          <p className="mt-0.5 text-[8px] tabular-nums text-white/20">
+                            MATCH #{match.id}
                           </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold ${
+                        className={`flex h-7 w-7 items-center justify-center rounded border text-[9px] font-bold ${
                           player?.isVictory
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-red-500/20 text-red-400"
+                            ? "border-emerald-400/15 bg-emerald-400/[0.06] text-emerald-400"
+                            : "border-red-400/15 bg-red-400/[0.06] text-red-400"
                         }`}
                       >
                         {player?.isVictory ? "W" : "L"}
                       </div>
                     </td>
 
-                    <td className="px-5 py-4">
-                      <span className="text-sm text-white">
+                    <td className="px-4 py-3">
+                      <span className="text-[11px] tabular-nums text-white/65">
                         {player?.kills || 0}
-                        <span className="mx-1 text-white/20">/</span>
+                        <span className="mx-1 text-white/15">/</span>
                         {player?.deaths || 0}
-                        <span className="mx-1 text-white/20">/</span>
+                        <span className="mx-1 text-white/15">/</span>
                         {player?.assists || 0}
                       </span>
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <ImpBar imp={player?.imp} />
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div
-                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.05]"
+                        className="flex h-7 w-7 items-center justify-center rounded border border-white/[0.06] bg-white/[0.025]"
                         title={getPositionLabel(player?.position)}
                       >
                         {getPositionIcon(player?.position)}
                       </div>
                     </td>
 
-                    <td className="px-5 py-4">
-                      <span className="text-sm text-white/70">
+                    <td className="px-4 py-3">
+                      <span className="text-[11px] tabular-nums text-white/45">
                         {formatDuration(match.durationSeconds)}
                       </span>
                     </td>
 
-                    <td className="px-5 py-4">
-                      <span className="text-sm text-white/70">
+                    <td className="px-4 py-3">
+                      <span className="text-[11px] tabular-nums text-white/45">
                         {formatDate(match.startDateTime)}
                       </span>
                     </td>
@@ -196,13 +200,13 @@ function ImpBar({ imp }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="flex w-9 justify-center text-xs font-bold text-white/70">
+      <span className="flex w-9 justify-center text-[10px] font-bold tabular-nums text-white/55">
         {value > 0 ? "+" : ""}
         {value}
       </span>
 
-      <div className="relative h-2 w-20 overflow-hidden rounded-full bg-white/10">
-        <div className="absolute left-1/2 top-0 h-full w-px bg-white/30" />
+      <div className="relative h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.08]">
+        <div className="absolute left-1/2 top-0 h-full w-px bg-white/20" />
 
         {value >= 0 ? (
           <div

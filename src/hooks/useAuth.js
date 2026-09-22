@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
+import { getPlayer } from "../lib/api/stratz";
 
 export function useAuth() {
   const [auth, setAuth] = useState({
     loading: true,
     authenticated: false,
     accountId: null,
+    profile: null,
   });
 
   const loadAuth = useCallback(async () => {
@@ -22,10 +24,25 @@ export function useAuth() {
 
       const data = await response.json();
 
+      if (!data.authenticated || !data.accountId) {
+        setAuth({
+          loading: false,
+          authenticated: false,
+          accountId: null,
+          profile: null,
+        });
+
+        return;
+      }
+
+      const accountId = data.accountId;
+      const profile = await getPlayer(accountId);
+
       setAuth({
         loading: false,
-        authenticated: Boolean(data.authenticated),
-        accountId: data.accountId || null,
+        authenticated: true,
+        accountId,
+        profile,
       });
     } catch (error) {
       console.error("Failed to load authentication state:", error);
@@ -34,6 +51,7 @@ export function useAuth() {
         loading: false,
         authenticated: false,
         accountId: null,
+        profile: null,
       });
     }
   }, []);
@@ -48,6 +66,7 @@ export function useAuth() {
         loading: false,
         authenticated: false,
         accountId: null,
+        profile: null,
       });
     }
   }, []);

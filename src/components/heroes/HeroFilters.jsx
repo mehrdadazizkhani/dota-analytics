@@ -28,25 +28,13 @@ function FilterButton({ active, children, onClick, meta = false }) {
     <button
       type="button"
       onClick={onClick}
-      className={`
-        cursor-pointer
-        rounded-md
-        border
-        px-2.5
-        py-1.5
-        text-[11px]
-        font-medium
-        whitespace-nowrap
-        transition
-
-        ${
-          active
-            ? meta
-              ? "border-red-500/70 bg-red-500/15 text-red-400"
-              : "border-red-500/50 bg-red-500/10 text-red-400"
-            : "border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:text-white"
-        }
-      `}
+      className={`cursor-pointer whitespace-nowrap rounded-md border px-2.5 py-1.5 text-[10px] font-medium transition-all duration-150 ${
+        active
+          ? meta
+            ? "border-red-500/50 bg-red-500/[0.08] text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.08)]"
+            : "border-red-500/30 bg-red-500/[0.06] text-white"
+          : "border-white/[0.07] bg-white/[0.02] text-white/35 hover:border-white/[0.13] hover:bg-white/[0.04] hover:text-white/70"
+      }`}
     >
       {children}
     </button>
@@ -56,7 +44,7 @@ function FilterButton({ active, children, onClick, meta = false }) {
 function FilterGroup({ label, children }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[9px] font-semibold uppercase tracking-widest text-white/30">
+      <span className="shrink-0 text-[8px] font-semibold uppercase tracking-[0.16em] text-white/20">
         {label}
       </span>
 
@@ -66,7 +54,7 @@ function FilterGroup({ label, children }) {
 }
 
 function Divider() {
-  return <div className="hidden h-5 w-px bg-white/10 xl:block" />;
+  return <div className="hidden h-5 w-px bg-white/[0.07] xl:block" />;
 }
 
 function HeroFilters({
@@ -81,41 +69,37 @@ function HeroFilters({
   return (
     <div
       className="
-      
-        fixed
+        mt-3
+        sticky
         bottom-3
-        left-1/2
         z-50
-        w-[calc(100%-1rem)]
-        -translate-x-1/2
-
-        sm:bottom-4
-        sm:w-[calc(100%-2rem)]
-
-        md:left-[calc(50%+7.5rem)]
-        md:w-[calc(94%-16rem)]
+        w-full
       "
     >
       <div
         className="
+          relative
           flex
           w-full
           items-center
           gap-3
 
-          rounded-xl
+          rounded-lg
           border
-          border-white/10
+          border-white/[0.08]
 
-          bg-[#090909]/95
+          bg-[#050505]/95
           p-2.5
 
-          shadow-2xl
+          shadow-[0_18px_50px_rgba(0,0,0,0.5)]
           backdrop-blur-md
 
           sm:p-3
         "
       >
+        {/* TOP ACCENT */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-lg bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+
         {/* LEFT FILTERS */}
         <div
           className="
@@ -209,7 +193,7 @@ function HeroFilters({
           className="
             shrink-0
             border-l
-            border-white/10
+            border-white/[0.07]
             pl-3
           "
         >
@@ -219,16 +203,22 @@ function HeroFilters({
             className="
               cursor-pointer
               rounded-md
+              border
+              border-transparent
               px-3
               py-1.5
 
-              text-[11px]
+              text-[9px]
               font-medium
-              text-white/40
+              uppercase
+              tracking-[0.12em]
+              text-white/25
 
-              transition
+              transition-all
+              duration-150
 
-              hover:bg-white/[0.05]
+              hover:border-red-500/15
+              hover:bg-red-500/[0.04]
               hover:text-red-400
             "
           >

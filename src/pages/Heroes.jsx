@@ -51,7 +51,6 @@ function getHeroAttribute(hero) {
 
 function HeroCard({ hero, isMatch, hasActiveFilters, isMeta, metaEnabled }) {
   const matchesMetaFilter = !metaEnabled || isMeta;
-
   const matchesOtherFilters = !hasActiveFilters || isMatch;
 
   const isDimmed = !matchesMetaFilter || !matchesOtherFilters;
@@ -59,19 +58,19 @@ function HeroCard({ hero, isMatch, hasActiveFilters, isMeta, metaEnabled }) {
   return (
     <Link
       to={`/heroes/${hero.id}`}
-      className={`group block overflow-hidden rounded-md bg-white/[0.02] transition ${
+      className={`group block overflow-hidden rounded-md bg-[#050505] transition-all duration-150 hover:z-20 hover:scale-150 shadow-2xl/50  ${
         isDimmed
-          ? "border-2 border-white/10 opacity-20 grayscale"
+          ? "border border-white/[0.08] opacity-20 grayscale"
           : isMeta
-            ? "border-2 border-[#ef4444] shadow-[0_0_14px_rgba(239,68,68,0.12)] hover:border-[#ef4444]"
+            ? "border border-red-500/70 shadow-[0_0_14px_rgba(239,68,68,0.12)] hover:border-red-400"
             : hasActiveFilters
-              ? "border-2 border-white/10 shadow-[0_0_14px_rgba(255,255,255,0.08)] hover:border-white/20"
-              : "border-2 border-white/10 hover:border-white/20"
+              ? "border border-white/[0.10] shadow-[0_0_14px_rgba(255,255,255,0.05)] hover:border-white/20"
+              : "border border-white/[0.08] hover:border-white/20"
       }`}
     >
-      <div className="relative aspect-[71/94] overflow-hidden bg-white/[0.03]">
+      <div className="relative aspect-[71/94] overflow-hidden bg-white/[0.025] ">
         {isMeta && (
-          <div className="pointer-events-none absolute -right-[2px] -top-[2px] z-10 h-[18px] w-[18px]">
+          <div className="pointer-events-none absolute -right-px -top-px z-10 h-[15px] w-[15px] ">
             <svg
               viewBox="0 0 14 14"
               className="h-full w-full"
@@ -98,12 +97,6 @@ function HeroCard({ hero, isMatch, hasActiveFilters, isMeta, metaEnabled }) {
           loading="lazy"
         />
       </div>
-
-      <div className="px-1 py-1">
-        <h3 className="truncate text-[8px] font-semibold leading-tight sm:text-[9px]">
-          {hero.displayName || hero.name}
-        </h3>
-      </div>
     </Link>
   );
 }
@@ -120,7 +113,7 @@ function HeroGroup({
 
   return (
     <section className="min-w-0">
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-2.5 flex items-center gap-2">
         <div className="flex items-center gap-1.5">
           {attributeIcon && (
             <img
@@ -130,17 +123,19 @@ function HeroGroup({
             />
           )}
 
-          <h2 className="text-[10px] font-semibold uppercase tracking-widest">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/65">
             {group.label}
           </h2>
         </div>
 
-        <div className="h-px flex-1 bg-white/10" />
+        <div className="h-px flex-1 bg-white/[0.07]" />
 
-        <span className="text-[9px] text-white/30">{heroes.length}</span>
+        <span className="text-[9px] tabular-nums text-white/25">
+          {heroes.length}
+        </span>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 sm:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
+      <div className="grid grid-cols-7 gap-2 sm:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-10">
         {heroes.map((hero) => {
           const metaData = heroMeta.get(Number(hero.id));
 
@@ -181,10 +176,21 @@ function Heroes() {
 
   return (
     <div className="pb-24">
+      {/* PAGE HEADER */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Heroes</h1>
+        <div className="flex items-center gap-2">
+          <span className="h-1 w-1 rounded-full bg-red-400" />
 
-        <p className="mt-1 text-sm text-white/50">
+          <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
+            Database
+          </span>
+        </div>
+
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+          Heroes
+        </h1>
+
+        <p className="mt-1 text-[11px] text-white/30">
           Explore Dota 2 heroes and their statistics.
         </p>
       </div>
@@ -192,22 +198,31 @@ function Heroes() {
       <HeroSearchOverlay search={filters.search} setSearch={setSearch} />
 
       <Widget>
-        {loading && <p className="text-sm text-white/50">Loading heroes...</p>}
+        {loading && (
+          <div className="flex min-h-40 items-center justify-center">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-white/25">
+              <span className="h-1 w-1 animate-pulse rounded-full bg-red-400" />
+              Loading heroes...
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="flex min-h-40 flex-col items-center justify-center text-center">
-            <p className="text-sm font-medium text-white/80">
-              Unable to load hero data.
+            <span className="mb-3 h-1.5 w-1.5 rounded-full bg-red-400" />
+
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
+              Unable to load hero data
             </p>
 
-            <p className="mt-1 text-xs text-white/40">
+            <p className="mt-1 text-[10px] text-white/25">
               STRATZ is temporarily unavailable. Please try again.
             </p>
 
             <button
               type="button"
               onClick={retry}
-              className="mt-4 cursor-pointer rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+              className="mt-4 cursor-pointer rounded-md border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.1em] text-white/45 transition hover:border-red-500/20 hover:bg-red-500/[0.04] hover:text-white/70"
             >
               Retry
             </button>
@@ -217,26 +232,46 @@ function Heroes() {
         {!loading && !error && (
           <>
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-sm font-medium">All Heroes</h2>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-red-400" />
+
+                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
+                    All Heroes
+                  </h2>
+                </div>
+
+                <p className="mt-1 text-[9px] text-white/20">
+                  {heroes.length} heroes available
+                </p>
+              </div>
 
               <input
                 type="search"
                 value={filters.search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search heroes..."
-                className="h-9 w-full rounded-md border border-white/10 bg-white/[0.03] px-3 text-xs text-white outline-none transition placeholder:text-white/30 focus:border-red-500/40 focus:bg-white/[0.05] sm:w-56 lg:hidden"
+                className="h-9 w-full rounded-md border border-white/[0.07] bg-white/[0.025] px-3 text-[10px] text-white outline-none transition placeholder:text-white/20 focus:border-red-500/25 focus:bg-white/[0.04] sm:w-56 lg:hidden"
               />
             </div>
 
             {metaError && (
-              <div className="mb-4 text-[10px] text-white/30">
-                Meta data is currently unavailable.
+              <div className="mb-4 flex items-center gap-2 rounded-md border border-white/[0.05] bg-white/[0.015] px-3 py-2">
+                <span className="h-1 w-1 rounded-full bg-white/20" />
+
+                <span className="text-[9px] uppercase tracking-[0.12em] text-white/25">
+                  Meta data is currently unavailable.
+                </span>
               </div>
             )}
 
             {metaLoading && (
-              <div className="mb-4 text-[10px] text-white/30">
-                Loading meta data...
+              <div className="mb-4 flex items-center gap-2 rounded-md border border-white/[0.05] bg-white/[0.015] px-3 py-2">
+                <span className="h-1 w-1 animate-pulse rounded-full bg-red-400/60" />
+
+                <span className="text-[9px] uppercase tracking-[0.12em] text-white/25">
+                  Loading meta data...
+                </span>
               </div>
             )}
 
