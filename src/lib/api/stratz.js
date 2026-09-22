@@ -139,13 +139,13 @@ export async function getPlayerMatches(steamAccountId, filters = {}) {
   if (!Number.isSafeInteger(numericSteamAccountId)) {
     throw new Error("Invalid Steam account ID.");
   }
-
   const request = {
     take: 100,
     positionIds: [],
     heroIds: [],
     gameModeIds: [],
     startDateTime: null,
+    isParty: null,
   };
 
   // Position filter
@@ -158,15 +158,27 @@ export async function getPlayerMatches(steamAccountId, filters = {}) {
     request.heroIds = filters.heroIds;
   }
 
+  // Mode filter
+  if (filters.mode === "SOLO") {
+    request.isParty = false;
+  }
+
+  if (filters.mode === "PARTY") {
+    request.isParty = true;
+  }
+
   // Time filter
-  if (filters.time && filters.time !== "ALL") {
-    const now = Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000);
 
-    const days = Number(filters.time);
+  const timeRanges = {
+    "1_MONTH": 30,
+    "3_MONTH": 90,
+    "6_MONTH": 180,
+    "12_MONTH": 365,
+  };
 
-    if (days > 0) {
-      request.startDateTime = now - days * 24 * 60 * 60;
-    }
+  if (timeRanges[filters.time]) {
+    request.startDateTime = now - timeRanges[filters.time] * 24 * 60 * 60;
   }
 
   // Ranked only

@@ -53,6 +53,7 @@ export function usePlayerMatches(accountId, filters = {}) {
     JSON.stringify(filters.heroIds),
     filters.time,
     filters.rankedOnly,
+    filters.mode,
   ]);
 
   return {
