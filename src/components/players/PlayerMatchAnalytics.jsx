@@ -7,11 +7,11 @@ import {
 } from "../icons/PositionIcons";
 
 const POSITION_CONFIG = {
-  1: { label: "Safe", icon: SafelaneIcon },
-  2: { label: "Mid", icon: MidlaneIcon },
-  3: { label: "Off", icon: OfflaneIcon },
-  4: { label: "Soft", icon: SoftSupportIcon },
-  5: { label: "Hard", icon: HardSupportIcon },
+  1: { label: "Safe Lane", icon: SafelaneIcon },
+  2: { label: "Mid Lane", icon: MidlaneIcon },
+  3: { label: "Offlane", icon: OfflaneIcon },
+  4: { label: "Soft Support", icon: SoftSupportIcon },
+  5: { label: "Hard Support", icon: HardSupportIcon },
 };
 
 function getMatchPlayer(match) {
@@ -530,10 +530,6 @@ function PlayerMatchAnalytics({ matches = [] }) {
                         {position.games}
                       </div>
 
-                      <div className="mt-0.5 text-[9px] font-semibold text-white/65">
-                        {position.winRate.toFixed(0)}%
-                      </div>
-
                       <div className="mt-0.5 text-[10px]">
                         <span className="text-emerald-400/85">
                           {position.wins}W
@@ -543,6 +539,18 @@ function PlayerMatchAnalytics({ matches = [] }) {
 
                         <span className="text-red-400/85">
                           {position.losses}L
+                        </span>
+                        <span className="px-0.5 text-white/15">/</span>
+                        <span
+                          className={`text-yellow-400/85 ${
+                            position.winRate.toFixed(0) > 50
+                              ? "#34d399"
+                              : position.winRate.toFixed(0) < 50
+                                ? "#f87171"
+                                : "#facc15"
+                          }`}
+                        >
+                          {position.winRate.toFixed(0)}% WR
                         </span>
                       </div>
 
@@ -670,42 +678,6 @@ function PlayerMatchAnalytics({ matches = [] }) {
 
                   <div className="pointer-events-none absolute bottom-5 left-1 text-[9px] text-white/20">
                     -{Math.round(maxAbsImp)}
-                  </div>
-                </div>
-
-                <div className="mt-2 grid grid-cols-3 gap-1.5">
-                  <div className="rounded-md border border-white/[0.05] bg-white/[0.015] px-2 py-1.5">
-                    <div className="text-[9px] uppercase tracking-[0.12em] text-white/20">
-                      Avg IMP
-                    </div>
-
-                    <div
-                      className={`mt-0.5 text-[10px] font-semibold ${
-                        avgImp >= 0 ? "text-emerald-400" : "text-red-400"
-                      }`}
-                    >
-                      {formatImp(avgImp)}
-                    </div>
-                  </div>
-
-                  <div className="rounded-md border border-white/[0.05] bg-white/[0.015] px-2 py-1.5">
-                    <div className="text-[9px] uppercase tracking-[0.12em] text-white/20">
-                      Best IMP
-                    </div>
-
-                    <div className="mt-0.5 text-[10px] font-semibold text-emerald-400">
-                      {formatImp(bestImp)}
-                    </div>
-                  </div>
-
-                  <div className="rounded-md border border-white/[0.05] bg-white/[0.015] px-2 py-1.5">
-                    <div className="text-[9px] uppercase tracking-[0.12em] text-white/20">
-                      Worst IMP
-                    </div>
-
-                    <div className="mt-0.5 text-[10px] font-semibold text-red-400">
-                      {formatImp(worstImp)}
-                    </div>
                   </div>
                 </div>
               </>

@@ -1,6 +1,6 @@
 import { Navigate, useParams } from "react-router-dom";
 import { useState } from "react";
-
+import PlayerPerformanceAnalytics from "../components/players/PlayerPerformanceAnalytics";
 import { useAuth } from "../hooks/useAuth";
 import { usePlayer } from "../hooks/usePlayer";
 import { usePlayerOverview } from "../hooks/usePlayerOverview";
@@ -128,6 +128,9 @@ function PlayerProfile({ accountId }) {
 
       <PlayerHeroPerformance heroes={overview?.heroesPerformance} />
       <PlayerMatchAnalytics matches={matches.slice(0, Number(filters.limit))} />
+      <PlayerPerformanceAnalytics
+        matches={matches.slice(0, Number(filters.limit))}
+      />
       <PlayerRecentMatches matches={matches.slice(0, Number(filters.limit))} />
     </div>
   );

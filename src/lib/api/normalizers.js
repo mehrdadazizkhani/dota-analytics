@@ -189,30 +189,28 @@ function normalizeMatchPlayer(player) {
   if (!player) {
     return null;
   }
-
   return {
     kills: Number(player.kills || 0),
-
     deaths: Number(player.deaths || 0),
-
     assists: Number(player.assists || 0),
-
     partyId: Number(player.partyId || 0) || null,
-
     lane: player.lane || null,
-
     position: player.position || null,
-
     imp: Number(player.imp || 0),
-
     isVictory: Boolean(player.isVictory),
-
     award: player.award || null,
-
+    numLastHits: Number(player.numLastHits || 0),
+    numDenies: Number(player.numDenies || 0),
+    goldPerMinute: Number(player.goldPerMinute || 0),
+    networth: Number(player.networth || 0),
+    experiencePerMinute: Number(player.experiencePerMinute || 0),
+    heroDamage: Number(player.heroDamage || 0),
+    towerDamage: Number(player.towerDamage || 0),
+    heroHealing: Number(player.heroHealing || 0),
+    isRadiant: Boolean(player.isRadiant),
     hero: player.hero
       ? {
           displayName: player.hero.displayName || "",
-
           shortName: player.hero.shortName || "",
         }
       : null,

@@ -188,6 +188,15 @@ export const GET_PLAYER_MATCHES = `
           imp
           isVictory
           award
+          numLastHits
+          numDenies
+          goldPerMinute
+          networth
+          experiencePerMinute
+          heroDamage
+          towerDamage
+          heroHealing
+          isRadiant
 
           hero {
             displayName
