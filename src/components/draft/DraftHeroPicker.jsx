@@ -71,28 +71,34 @@ function heroMatchesSearch(hero, search) {
   return values.some((value) => normalizeSearchValue(value).includes(query));
 }
 
-function HeroOption({ hero, selected, onSelect }) {
+function HeroOption({ hero, selected, onSelect, disabled }) {
   return (
     <button
       type="button"
       onClick={() => {
-        if (!selected) {
+        if (!selected && !disabled) {
           onSelect(hero);
         }
       }}
-      disabled={selected}
+      disabled={selected || disabled}
       title={hero.displayName || hero.name}
       className={`group relative aspect-[71/94] min-w-0 overflow-hidden rounded-md border bg-[#050505] transition-all duration-150 ${
         selected
-          ? " border-white/[0.05] opacity-45 grayscale-[0.2]"
-          : "border-white/[0.08] hover:border-white/30 cursor-pointer"
+          ? "border-white/[0.05] opacity-45 grayscale-[0.2]"
+          : disabled
+            ? "cursor-not-allowed border-white/[0.035] opacity-20 grayscale"
+            : "cursor-pointer border-white/[0.08] hover:border-white/30"
       }`}
     >
       <img
         src={getHeroAsset(hero, "portrait")}
         alt={hero.displayName || hero.name}
         className={`block h-full w-full object-cover transition duration-200 ${
-          selected ? "brightness-50" : "group-hover:scale-[1.05]"
+          selected
+            ? "brightness-50"
+            : disabled
+              ? "brightness-40 grayscale"
+              : "group-hover:scale-[1.05]"
         }`}
         loading="lazy"
       />
@@ -106,7 +112,7 @@ function HeroOption({ hero, selected, onSelect }) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 px-1.5 pb-1.5">
         <div
           className={`truncate text-[9px] font-semibold leading-tight ${
-            selected ? "text-white/30" : "text-white/90"
+            selected || disabled ? "text-white/20" : "text-white/90"
           }`}
         >
           {hero.displayName || hero.name}
@@ -116,7 +122,13 @@ function HeroOption({ hero, selected, onSelect }) {
   );
 }
 
-function AttributeGroup({ group, heroes, selectedHeroIds, onSelect }) {
+function AttributeGroup({
+  group,
+  heroes,
+  selectedHeroIds,
+  disabledHeroIds,
+  onSelect,
+}) {
   const attributeIcon = getAttributeAsset(group.value);
 
   if (!heroes.length) {
@@ -161,6 +173,7 @@ function AttributeGroup({ group, heroes, selectedHeroIds, onSelect }) {
             key={hero.id}
             hero={hero}
             selected={selectedHeroIds.has(Number(hero.id))}
+            disabled={disabledHeroIds.has(Number(hero.id))}
             onSelect={onSelect}
           />
         ))}
@@ -173,6 +186,7 @@ function DraftHeroPicker({
   open,
   heroes = [],
   selectedHeroIds = [],
+  disabledHeroIds = [],
   title = "Select Hero",
   onSelect,
   onClose,
@@ -191,6 +205,11 @@ function DraftHeroPicker({
   const selectedIds = useMemo(
     () => new Set(selectedHeroIds.map((id) => Number(id))),
     [selectedHeroIds],
+  );
+
+  const disabledIds = useMemo(
+    () => new Set(disabledHeroIds.map((id) => Number(id))),
+    [disabledHeroIds],
   );
 
   const groupedHeroes = useMemo(() => {
@@ -283,6 +302,7 @@ function DraftHeroPicker({
                   group={group}
                   heroes={groupedHeroes[group.value] || []}
                   selectedHeroIds={selectedIds}
+                  disabledHeroIds={disabledIds}
                   onSelect={handleSelect}
                 />
               ))}

@@ -6,7 +6,12 @@ import {
   loadDraftSetup,
   saveDraftSetup,
 } from "../lib/draft/draftSetup";
-import { createDraftState } from "../lib/draft/draftState";
+import {
+  createDraftState,
+  loadDraftSession,
+  saveDraftSession,
+  clearDraftSession,
+} from "../lib/draft/draftState";
 import { calculateHeroScore } from "../lib/draft/draftEngine";
 import DraftHeroPicker from "../components/draft/DraftHeroPicker";
 import { getHeroAsset } from "../lib/assets/heroes";
@@ -107,7 +112,54 @@ function DraftLab() {
 
   const [draftSetup, setDraftSetup] = useState(() => loadDraftSetup());
 
-  const [draftState, setDraftState] = useState(() => createDraftState());
+  const [draftSessionActive, setDraftSessionActive] = useState(() => {
+    return Boolean(loadDraftSession());
+  });
+
+  const [draftState, setDraftState] = useState(() => {
+    const session = loadDraftSession();
+
+    return session?.draftState || createDraftState();
+  });
+
+  useEffect(() => {
+    if (!draftSessionActive) {
+      return;
+    }
+
+    saveDraftSession(draftState);
+  }, [draftState, draftSessionActive]);
+
+  useEffect(() => {
+    if (!draftSessionActive) {
+      return;
+    }
+
+    async function restoreDraft() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const [data, heroMeta] = await Promise.all([
+          getDraftData(bracket),
+          getHeroMeta(),
+        ]);
+
+        const dataset = buildDraftDataset(data, heroMeta);
+
+        setDraftData(dataset);
+      } catch (error) {
+        console.error("Failed to restore draft:", error);
+        setError(error.message || "Failed to restore draft.");
+        setDraftSessionActive(false);
+        clearDraftSession();
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    restoreDraft();
+  }, [draftSessionActive]);
 
   const [picker, setPicker] = useState({
     open: false,
@@ -161,6 +213,15 @@ function DraftLab() {
 
   function getDraftHero(heroId) {
     return heroes.find((hero) => Number(hero.id) === Number(heroId));
+  }
+
+  function getUsedDraftHeroIds() {
+    return [
+      ...draftState.ourPicks,
+      ...draftState.ourBans,
+      ...draftState.enemyPicks,
+      ...draftState.enemyBans,
+    ].map((item) => Number(item.heroId));
   }
 
   function setDraftActionHero(actionIndex, heroId) {
@@ -274,6 +335,9 @@ function DraftLab() {
   }
 
   function handleBackToSetup() {
+    clearDraftSession();
+
+    setDraftSessionActive(false);
     setDraftData(null);
     setDraftState(createDraftState());
     setError("");
@@ -428,6 +492,34 @@ function DraftLab() {
     }
 
     if (picker.type === "DRAFT_ACTION" && picker.actionIndex !== null) {
+      const usedHeroIds = new Set(getUsedDraftHeroIds());
+
+      const action = getDraftAction(picker.actionIndex);
+
+      const currentCollectionKey =
+        action.side === "OUR"
+          ? action.type === "PICK"
+            ? "ourPicks"
+            : "ourBans"
+          : action.type === "PICK"
+            ? "enemyPicks"
+            : "enemyBans";
+
+      const currentCollection = draftState[currentCollectionKey] || [];
+
+      const currentHero = currentCollection.find(
+        (item) => Number(item.actionIndex) === Number(picker.actionIndex),
+      );
+
+      // Allow the hero currently assigned to this slot,
+      // but block heroes used by any other draft action.
+      if (
+        usedHeroIds.has(Number(hero.id)) &&
+        Number(currentHero?.heroId) !== Number(hero.id)
+      ) {
+        return;
+      }
+
       setDraftActionHero(picker.actionIndex, hero.id);
 
       closePicker();
@@ -491,6 +583,12 @@ function DraftLab() {
       setError("");
       setDraftData(null);
 
+      const freshDraftState = createDraftState();
+
+      setDraftState(freshDraftState);
+      setDraftSessionActive(true);
+      saveDraftSession(freshDraftState);
+
       const [data, heroMeta] = await Promise.all([
         getDraftData(bracket),
         getHeroMeta(),
@@ -502,18 +600,24 @@ function DraftLab() {
     } catch (error) {
       console.error("Failed to load draft data:", error);
       setError(error.message || "Failed to load draft data.");
+
+      setDraftSessionActive(false);
+      clearDraftSession();
     } finally {
       setLoading(false);
     }
   }
 
   function handleResetSetup() {
+    clearDraftSession();
+
     localStorage.removeItem("dota-draft-bracket");
     localStorage.removeItem("dota-draft-team-side");
     localStorage.removeItem("dota-draft-first-pick-side");
 
     const emptySetup = createDraftSetup();
 
+    setDraftSessionActive(false);
     setDraftSetup(emptySetup);
     setDraftState(createDraftState());
     setDraftData(null);
@@ -586,7 +690,7 @@ function DraftLab() {
 
             <button
               type="button"
-              onClick={handleBackToSetup}
+              onClick={handleResetSetup}
               disabled={loading}
               className="h-8 cursor-pointer rounded-md border border-white/[0.07] bg-white/[0.02] px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-white/30 transition hover:border-white/[0.13] hover:bg-white/[0.04] hover:text-white/60 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -855,7 +959,7 @@ function DraftLab() {
 
               <button
                 type="button"
-                onClick={handleResetSetup}
+                onClick={handleBackToSetup}
                 className="cursor-pointer rounded-md border border-white/[0.07] bg-white/[0.02] px-3 py-1.5 text-[9px] font-medium uppercase tracking-[0.1em] text-white/35 transition hover:border-white/[0.13] hover:bg-white/[0.04] hover:text-white/60"
               >
                 Back to Setup
@@ -1233,6 +1337,9 @@ function DraftLab() {
         title={picker.title}
         onSelect={handlePickerSelect}
         onClose={closePicker}
+        disabledHeroIds={
+          picker.type === "DRAFT_ACTION" ? getUsedDraftHeroIds() : []
+        }
       />
     </div>
   );
