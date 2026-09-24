@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { getDraftData, getHeroMeta, getHeroes } from "../lib/api/stratz";
 import { buildDraftDataset } from "../lib/draft/draftData";
+import DraftSuggestions from "../components/draft/DraftSuggestions";
+import { getDraftSuggestions } from "../lib/draft/draftSuggestions";
 import {
   createDraftSetup,
   loadDraftSetup,
@@ -665,6 +667,13 @@ function DraftLab() {
 
   const threatHeroes = getThreatHeroes();
 
+  const draftSuggestions = getDraftSuggestions({
+    heroes,
+    draftState,
+    draftSetup,
+    draftDataset: draftData,
+  });
+
   const testHeroData = draftData
     ? Array.from(draftData.heroes.values())[0]
     : null;
@@ -1244,6 +1253,12 @@ function DraftLab() {
               </div>
             </div>
           </div>
+
+          <DraftSuggestions
+            heroes={heroes}
+            draftState={draftState}
+            suggestions={draftSuggestions}
+          />
 
           {/* DATASET SUMMARY */}
           <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-3">
