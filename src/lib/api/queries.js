@@ -213,11 +213,21 @@ export const GET_DRAFT_DATA = (bracket) => `
     heroStats {
       stats(bracketBasicIds: ${bracket}) {
         heroId
+        matchCount
         winCount
+        topCore
+        topSupport
         disableCount
+        slowCount
         stunCount
-        kDAAverage
-        killContributionAverage
+        kills
+        deaths
+        assists
+        networth
+        heroDamage
+        towerDamage
+        campsStacked
+        supportGold
       }
 
       matchUp(bracketBasicIds: ${bracket}) {

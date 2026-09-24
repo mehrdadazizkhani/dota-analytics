@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { getDraftData, getHeroMeta, getHeroes } from "../lib/api/stratz";
+import { getDraftData, getHeroes } from "../lib/api/stratz";
 import { buildDraftDataset } from "../lib/draft/draftData";
 import DraftSuggestions from "../components/draft/DraftSuggestions";
 import { getDraftSuggestions } from "../lib/draft/draftSuggestions";
+import DraftAnalysis from "../components/draft/DraftAnalysis";
 import {
   createDraftSetup,
   loadDraftSetup,
@@ -19,6 +20,7 @@ import DraftHeroPicker from "../components/draft/DraftHeroPicker";
 import { getHeroAsset } from "../lib/assets/heroes";
 import Select from "../components/ui/Select";
 import { getDraftSequence } from "../lib/draft/draftOrder";
+import { calculateDraftAdvantage } from "../lib/draft/draftAnalysis";
 import {
   OfflaneIcon,
   SafelaneIcon,
@@ -142,12 +144,9 @@ function DraftLab() {
         setLoading(true);
         setError("");
 
-        const [data, heroMeta] = await Promise.all([
-          getDraftData(bracket),
-          getHeroMeta(),
-        ]);
+        const draftData = await getDraftData(bracket);
 
-        const dataset = buildDraftDataset(data, heroMeta);
+        const dataset = buildDraftDataset(draftData);
 
         setDraftData(dataset);
       } catch (error) {
@@ -626,12 +625,9 @@ function DraftLab() {
       setDraftSessionActive(true);
       saveDraftSession(freshDraftState);
 
-      const [data, heroMeta] = await Promise.all([
-        getDraftData(bracket),
-        getHeroMeta(),
-      ]);
+      const [data] = await Promise.all([getDraftData(bracket)]);
 
-      const dataset = buildDraftDataset(data, heroMeta);
+      const dataset = buildDraftDataset(data);
 
       setDraftData(dataset);
     } catch (error) {
@@ -671,6 +667,11 @@ function DraftLab() {
     heroes,
     draftState,
     draftSetup,
+    draftDataset: draftData,
+  });
+
+  const draftAdvantage = calculateDraftAdvantage({
+    draftState,
     draftDataset: draftData,
   });
 
@@ -1259,6 +1260,8 @@ function DraftLab() {
             draftState={draftState}
             suggestions={draftSuggestions}
           />
+
+          <DraftAnalysis analysis={draftAdvantage} />
 
           {/* DATASET SUMMARY */}
           <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-3">

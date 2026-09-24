@@ -74,9 +74,7 @@ export function calculatePositionFit(hero, position) {
 export function calculateMetaScore(heroId, draftDataset) {
   const heroData = draftDataset?.heroes?.get(Number(heroId));
 
-  if (!heroData?.meta) {
-    return 0;
-  }
+  if (!heroData?.meta) return 0;
 
   const winRate = Number(heroData.meta.winRate || 0);
   const pickRate = Number(heroData.meta.pickRate || 0);
