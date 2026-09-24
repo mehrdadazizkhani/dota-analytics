@@ -247,6 +247,23 @@ function DraftLab() {
         (item) => Number(item.actionIndex) === Number(actionIndex),
       );
 
+      // Check whether this hero is already used
+      // by another draft action.
+      const heroAlreadyUsed = [
+        ...current.ourPicks,
+        ...current.ourBans,
+        ...current.enemyPicks,
+        ...current.enemyBans,
+      ].some(
+        (item) =>
+          Number(item.heroId) === Number(heroId) &&
+          Number(item.actionIndex) !== Number(actionIndex),
+      );
+
+      if (heroAlreadyUsed) {
+        return current;
+      }
+
       const nextCollection = [...collection];
 
       const value = {
@@ -260,9 +277,21 @@ function DraftLab() {
         nextCollection.push(value);
       }
 
+      const isCurrentAction =
+        Number(actionIndex) === Number(current.currentActionIndex);
+
       return {
         ...current,
         [collectionKey]: nextCollection,
+
+        // Only completing the current action advances the draft.
+        // Editing an older completed action does NOT move the draft backwards.
+        currentActionIndex: isCurrentAction
+          ? Math.min(
+              Number(current.currentActionIndex) + 1,
+              draftSequence.length,
+            )
+          : current.currentActionIndex,
       };
     });
   }
@@ -295,6 +324,12 @@ function DraftLab() {
     const action = getDraftAction(actionIndex);
 
     if (!action) {
+      return;
+    }
+
+    // Future actions are locked.
+    // Current and previously completed actions remain editable.
+    if (Number(actionIndex) > Number(draftState.currentActionIndex)) {
       return;
     }
 
@@ -1118,7 +1153,13 @@ function DraftLab() {
 
                   const hero = entry ? getDraftHero(entry.heroId) : null;
 
-                  const active = action.index === draftState.currentActionIndex;
+                  const isCurrentAction =
+                    Number(action.index) ===
+                    Number(draftState.currentActionIndex);
+
+                  const isCompleted = Boolean(entry);
+
+                  const isLocked = !isCurrentAction && !isCompleted;
 
                   const isOurSide = action.side === "OUR";
                   const isPick = action.type === "PICK";
@@ -1135,6 +1176,7 @@ function DraftLab() {
                       className="relative h-[190px] min-w-0"
                     >
                       {/* ACTION SLOT */}
+
                       <button
                         type="button"
                         onClick={() => openDraftActionPicker(action.index)}
@@ -1173,6 +1215,10 @@ function DraftLab() {
                               isOurSide
                                 ? "bottom-[calc(50%+6px)]"
                                 : "top-[calc(50%+6px)]"
+                            } ${
+                              isCurrentAction
+                                ? "animate-[draftGlow_1.8s_ease-in-out_infinite]"
+                                : ""
                             }`}
                           >
                             <span className="text-lg font-light leading-none">

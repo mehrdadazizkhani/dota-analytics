@@ -29,3 +29,21 @@ body {
     opacity: 1;
   }
 }
+
+@keyframes draftGlow {
+  0%,
+  100% {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow:
+      0 0 3px rgba(255, 255, 255, 0.12),
+      0 0 8px rgba(255, 255, 255, 0.06);
+  }
+
+  50% {
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow:
+      0 0 7px rgba(255, 255, 255, 0.55),
+      0 0 20px rgba(255, 255, 255, 0.3),
+      0 0 38px rgba(255, 255, 255, 0.1);
+  }
+}
