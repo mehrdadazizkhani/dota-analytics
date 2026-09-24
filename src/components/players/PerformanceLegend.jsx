@@ -1,4 +1,4 @@
-const DEFAULT_ACTIVE = ["goldPerMinute", "networth", "heroDamage", "impact"];
+const DEFAULT_ACTIVE = ["performanceScore", "networth", "heroDamage", "impact"];
 
 function PerformanceLegend({ series, trends, activeSeries, setActiveSeries }) {
   function toggleSeries(key) {

@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { getDraftData, getHeroMeta, getHeroes } from "../lib/api/stratz";
 import { buildDraftDataset } from "../lib/draft/draftData";
-import { createDraftSetup } from "../lib/draft/draftSetup";
+import {
+  createDraftSetup,
+  loadDraftSetup,
+  saveDraftSetup,
+} from "../lib/draft/draftSetup";
 import { createDraftState } from "../lib/draft/draftState";
 import { calculateHeroScore } from "../lib/draft/draftEngine";
 import DraftHeroPicker from "../components/draft/DraftHeroPicker";
@@ -70,9 +74,29 @@ const POSITIONS = [
 const COMFORT_LEVELS = [1, 2, 3, 4, 5];
 
 function DraftLab() {
-  const [bracket, setBracket] = useState("DIVINE_IMMORTAL");
-  const [teamSide, setTeamSide] = useState("DIRE");
-  const [firstPickSide, setFirstPickSide] = useState("OUR");
+  const [bracket, setBracket] = useState(() => {
+    try {
+      return localStorage.getItem("dota-draft-bracket") || "DIVINE_IMMORTAL";
+    } catch {
+      return "DIVINE_IMMORTAL";
+    }
+  });
+
+  const [teamSide, setTeamSide] = useState(() => {
+    try {
+      return localStorage.getItem("dota-draft-team-side") || "DIRE";
+    } catch {
+      return "DIRE";
+    }
+  });
+
+  const [firstPickSide, setFirstPickSide] = useState(() => {
+    try {
+      return localStorage.getItem("dota-draft-first-pick-side") || "OUR";
+    } catch {
+      return "OUR";
+    }
+  });
   const [heroes, setHeroes] = useState([]);
   const [heroesLoading, setHeroesLoading] = useState(true);
   const [heroesError, setHeroesError] = useState("");
@@ -81,19 +105,7 @@ function DraftLab() {
   const [draftData, setDraftData] = useState(null);
   const [error, setError] = useState("");
 
-  const [draftSetup, setDraftSetup] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem("dota-draft-setup");
-
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (error) {
-      console.error("Failed to restore draft setup:", error);
-    }
-
-    return createDraftSetup();
-  });
+  const [draftSetup, setDraftSetup] = useState(() => loadDraftSetup());
 
   const [draftState, setDraftState] = useState(() => createDraftState());
 
@@ -106,8 +118,20 @@ function DraftLab() {
   });
 
   useEffect(() => {
-    sessionStorage.setItem("dota-draft-setup", JSON.stringify(draftSetup));
+    saveDraftSetup(draftSetup);
   }, [draftSetup]);
+
+  useEffect(() => {
+    localStorage.setItem("dota-draft-bracket", bracket);
+  }, [bracket]);
+
+  useEffect(() => {
+    localStorage.setItem("dota-draft-team-side", teamSide);
+  }, [teamSide]);
+
+  useEffect(() => {
+    localStorage.setItem("dota-draft-first-pick-side", firstPickSide);
+  }, [firstPickSide]);
 
   const draftSequence = getDraftSequence(teamSide, firstPickSide);
 
@@ -247,6 +271,13 @@ function DraftLab() {
           : player,
       ),
     }));
+  }
+
+  function handleBackToSetup() {
+    setDraftData(null);
+    setDraftState(createDraftState());
+    setError("");
+    closePicker();
   }
 
   function updatePlayerName(playerId, name) {
@@ -477,11 +508,18 @@ function DraftLab() {
   }
 
   function handleResetSetup() {
-    sessionStorage.removeItem("dota-draft-setup");
+    localStorage.removeItem("dota-draft-bracket");
+    localStorage.removeItem("dota-draft-team-side");
+    localStorage.removeItem("dota-draft-first-pick-side");
 
-    setDraftSetup(createDraftSetup());
+    const emptySetup = createDraftSetup();
+
+    setDraftSetup(emptySetup);
     setDraftState(createDraftState());
     setDraftData(null);
+    setBracket("DIVINE_IMMORTAL");
+    setTeamSide("DIRE");
+    setFirstPickSide("OUR");
     setError("");
     closePicker();
   }
@@ -548,7 +586,7 @@ function DraftLab() {
 
             <button
               type="button"
-              onClick={handleResetSetup}
+              onClick={handleBackToSetup}
               disabled={loading}
               className="h-8 cursor-pointer rounded-md border border-white/[0.07] bg-white/[0.02] px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-white/30 transition hover:border-white/[0.13] hover:bg-white/[0.04] hover:text-white/60 disabled:cursor-not-allowed disabled:opacity-40"
             >

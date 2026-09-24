@@ -1,3 +1,5 @@
+const DRAFT_SETUP_STORAGE_KEY = "dota-analytics-draft-setup";
+
 export function createDraftSetup() {
   return {
     players: [
@@ -35,4 +37,26 @@ export function createDraftSetup() {
 
     teamThreats: [],
   };
+}
+
+export function loadDraftSetup() {
+  try {
+    const saved = localStorage.getItem(DRAFT_SETUP_STORAGE_KEY);
+
+    if (!saved) {
+      return createDraftSetup();
+    }
+
+    return JSON.parse(saved);
+  } catch {
+    return createDraftSetup();
+  }
+}
+
+export function saveDraftSetup(setup) {
+  try {
+    localStorage.setItem(DRAFT_SETUP_STORAGE_KEY, JSON.stringify(setup));
+  } catch {
+    // Ignore localStorage errors.
+  }
 }
