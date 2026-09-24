@@ -9,9 +9,10 @@ globalThis.__DOTA_ANALYTICS_STRATZ_CACHE__ = cache;
 globalThis.__DOTA_ANALYTICS_STRATZ_PENDING__ = pendingRequests;
 
 const CACHE_TTL = {
-  heroes: 60 * 60 * 1000,
-  meta: 10 * 60 * 1000,
-  default: 60 * 1000,
+  static: 4 * 24 * 60 * 60 * 1000, // 4 days
+  player: 12 * 60 * 60 * 1000, // 12 hours
+  meta: 60 * 60 * 1000, // 1 hour
+  draft: 60 * 60 * 1000, // 1 hour
 };
 
 const MAX_RETRIES = 3;
@@ -27,15 +28,27 @@ function getCacheKey(query, variables) {
 }
 
 function getCacheTtl(query) {
-  if (query.includes("GetHeroes")) {
-    return CACHE_TTL.heroes;
+  if (query.includes("GetHeroes") || query.includes("GetHero(")) {
+    return CACHE_TTL.static;
   }
 
   if (query.includes("GetHeroMeta")) {
     return CACHE_TTL.meta;
   }
 
-  return CACHE_TTL.default;
+  if (query.includes("GetDraftData")) {
+    return CACHE_TTL.draft;
+  }
+
+  if (
+    query.includes("GetPlayer(") ||
+    query.includes("GetPlayerOverview") ||
+    query.includes("GetPlayerMatches")
+  ) {
+    return CACHE_TTL.player;
+  }
+
+  return CACHE_TTL.player;
 }
 
 function getCached(cacheKey) {
