@@ -321,6 +321,57 @@ function DraftLab() {
     }));
   }
 
+  function handleUndoDraft() {
+    const completedActions = [
+      ...draftState.ourPicks,
+      ...draftState.ourBans,
+      ...draftState.enemyPicks,
+      ...draftState.enemyBans,
+    ];
+
+    if (!completedActions.length) {
+      return;
+    }
+
+    const lastActionIndex = Math.max(
+      ...completedActions.map((item) => Number(item.actionIndex)),
+    );
+
+    const action = getDraftAction(lastActionIndex);
+
+    if (!action) {
+      return;
+    }
+
+    const collectionKey =
+      action.side === "OUR"
+        ? action.type === "PICK"
+          ? "ourPicks"
+          : "ourBans"
+        : action.type === "PICK"
+          ? "enemyPicks"
+          : "enemyBans";
+
+    setDraftState((current) => ({
+      ...current,
+      [collectionKey]: current[collectionKey].filter(
+        (item) => Number(item.actionIndex) !== Number(lastActionIndex),
+      ),
+      currentActionIndex: Number(lastActionIndex),
+    }));
+
+    closePicker();
+  }
+
+  function handleClearDraft() {
+    if (!window.confirm("Clear the current draft?")) {
+      return;
+    }
+
+    setDraftState(createDraftState());
+    closePicker();
+  }
+
   function openDraftActionPicker(actionIndex) {
     const action = getDraftAction(actionIndex);
 
@@ -1085,8 +1136,42 @@ function DraftLab() {
                 </div>
               </div>
 
-              <div className="text-[8px] uppercase tracking-[0.12em] text-white/20">
-                {draftState.currentActionIndex + 1} / {draftSequence.length}
+              <div className="flex shrink-0 items-center gap-2">
+                <div className="text-[8px] uppercase tracking-[0.12em] text-white/20">
+                  {Math.min(
+                    draftState.currentActionIndex + 1,
+                    draftSequence.length,
+                  )}{" "}
+                  / {draftSequence.length}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleUndoDraft}
+                  disabled={
+                    draftState.ourPicks.length === 0 &&
+                    draftState.ourBans.length === 0 &&
+                    draftState.enemyPicks.length === 0 &&
+                    draftState.enemyBans.length === 0
+                  }
+                  className="cursor-pointer rounded border border-white/[0.07] bg-white/[0.02] px-2.5 py-1.5 text-[8px] font-semibold uppercase tracking-[0.1em] text-white/35 transition hover:border-white/[0.13] hover:bg-white/[0.04] hover:text-white/60 disabled:cursor-not-allowed disabled:opacity-20"
+                >
+                  ↶ Undo
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleClearDraft}
+                  disabled={
+                    draftState.ourPicks.length === 0 &&
+                    draftState.ourBans.length === 0 &&
+                    draftState.enemyPicks.length === 0 &&
+                    draftState.enemyBans.length === 0
+                  }
+                  className="cursor-pointer rounded border border-red-500/15 bg-red-500/[0.03] px-2.5 py-1.5 text-[8px] font-semibold uppercase tracking-[0.1em] text-red-400/50 transition hover:border-red-500/30 hover:bg-red-500/[0.06] hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-20"
+                >
+                  Clear Draft
+                </button>
               </div>
             </div>
 

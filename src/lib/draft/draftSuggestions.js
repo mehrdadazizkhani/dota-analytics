@@ -1,5 +1,11 @@
 import { calculateHeroScore } from "./draftEngine";
 
+function average(values) {
+  if (!values.length) return 0;
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
 function getAvailableHeroes(heroes, draftState) {
   const usedHeroIds = new Set(
     [
@@ -19,6 +25,7 @@ function getHeroDataset(hero, draftDataset) {
 
 function buildEngineHero(hero, draftDataset) {
   const datasetHero = getHeroDataset(hero, draftDataset);
+
   return {
     ...hero,
     heroId: Number(hero.id),
@@ -30,6 +37,29 @@ function buildEngineHero(hero, draftDataset) {
     matchCountWith: datasetHero?.matchCountWith || 0,
     matchCountVs: datasetHero?.matchCountVs || 0,
   };
+}
+
+function getHeroRoles(hero) {
+  if (!Array.isArray(hero?.roles)) {
+    return [];
+  }
+
+  return hero.roles.map((role) => role.roleId);
+}
+
+function isSupportHero(hero) {
+  return getHeroRoles(hero).includes("SUPPORT");
+}
+
+function isCoreHero(hero) {
+  const roles = getHeroRoles(hero);
+
+  return (
+    roles.includes("CARRY") ||
+    roles.includes("NUKER") ||
+    roles.includes("INITIATOR") ||
+    roles.includes("DURABLE")
+  );
 }
 
 function scorePick({ hero, player, draftState, draftSetup, draftDataset }) {
@@ -65,82 +95,206 @@ function calculateBanMetaScore(hero, draftDataset) {
   return winRateScore * 0.7 + pickRateScore * 0.3;
 }
 
-function calculateBanScore({ hero, draftState, draftSetup, draftDataset }) {
-  const heroData = getHeroDataset(hero, draftDataset);
+/*
+ * --------------------------------------------------
+ * ENEMY DRAFT INTENT
+ * --------------------------------------------------
+ *
+ * We are not trying to predict the exact hero.
+ *
+ * We are estimating:
+ *
+ * "Which remaining heroes would improve the enemy
+ * draft the most if they were allowed to pick them?"
+ *
+ * Enemy picks tell us what the team already has.
+ * Enemy bans give us additional role / archetype signals.
+ * Our picks tell us which enemy additions are dangerous
+ * against our current composition.
+ */
 
-  if (!heroData) {
-    return {
-      score: 0,
-      breakdown: {
-        enemyThreat: 0,
-        teamThreat: 0,
-        meta: 0,
-      },
-    };
+function calculateEnemyRoleNeed(hero, draftState, heroes) {
+  const enemyPicks = draftState.enemyPicks || [];
+  const enemyBans = draftState.enemyBans || [];
+
+  const enemyPickHeroes = enemyPicks
+    .map((pick) =>
+      heroes.find((candidate) => Number(candidate.id) === Number(pick.heroId)),
+    )
+    .filter(Boolean);
+
+  const enemyBanHeroes = enemyBans
+    .map((ban) =>
+      heroes.find((candidate) => Number(candidate.id) === Number(ban.heroId)),
+    )
+    .filter(Boolean);
+
+  const enemySupports = enemyPickHeroes.filter(isSupportHero).length;
+
+  const enemyCores = enemyPickHeroes.filter(isCoreHero).length;
+
+  const candidateSupport = isSupportHero(hero);
+  const candidateCore = isCoreHero(hero);
+
+  /*
+   * Target composition:
+   *
+   * 3 cores
+   * 2 supports
+   */
+
+  const supportNeed = Math.max(0, 2 - enemySupports) / 2;
+
+  const coreNeed = Math.max(0, 3 - enemyCores) / 3;
+
+  let score = 0;
+
+  if (candidateSupport) {
+    score += supportNeed * 100;
   }
 
-  const ourPicks = draftState.ourPicks || [];
-  const enemyPicks = draftState.enemyPicks || [];
+  if (candidateCore) {
+    score += coreNeed * 100;
+  }
 
   /*
-   * 1. Meta threat
+   * Enemy bans are used as an additional signal.
    *
-   * A strong meta hero is inherently more valuable to remove.
-   */
-  const metaScore = calculateBanMetaScore(hero, draftDataset);
-
-  /*
-   * 2. Threat to our current picks
+   * If the enemy has already banned several heroes
+   * belonging to the same role as our candidate, that
+   * role becomes more relevant to their draft intent.
    *
-   * If the candidate hero performs well against our
-   * current picks, banning it becomes more valuable.
+   * Example:
+   *
+   * Enemy Pick = Core
+   * Enemy Bans = Support + Support
+   *
+   * Remaining strong Supports receive a threat boost.
    */
-  const counterValues = [];
 
-  for (const ourPick of ourPicks) {
-    const ourHeroData = getHeroDataset(ourPick.heroId, draftDataset);
+  if (enemyBanHeroes.length) {
+    const bannedSupports = enemyBanHeroes.filter(isSupportHero).length;
 
-    if (!ourHeroData) continue;
+    const bannedCores = enemyBanHeroes.filter(isCoreHero).length;
 
-    const relation = ourHeroData.vs?.get(Number(hero.id));
+    if (candidateSupport && bannedSupports > 0) {
+      const signal = Math.min(1, bannedSupports / enemyBanHeroes.length);
+
+      score += signal * 35;
+    }
+
+    if (candidateCore && bannedCores > 0) {
+      const signal = Math.min(1, bannedCores / enemyBanHeroes.length);
+
+      score += signal * 35;
+    }
+  }
+
+  return Math.max(0, Math.min(100, score));
+}
+
+function calculateEnemySynergyThreat(hero, draftState, draftDataset) {
+  const heroData = getHeroDataset(hero, draftDataset);
+
+  if (!heroData?.with || !draftState?.enemyPicks?.length) {
+    return 0;
+  }
+
+  const synergyValues = [];
+
+  for (const enemyPick of draftState.enemyPicks) {
+    const relation = heroData.with.get(Number(enemyPick.heroId));
 
     if (!relation) continue;
 
-    const enemyWinRate = Number(relation.winRateHeroId2 || 0);
-
-    counterValues.push(enemyWinRate);
+    synergyValues.push(Number(relation.synergy || 0));
   }
 
-  const enemyThreat =
-    counterValues.length > 0
-      ? Math.max(0, Math.min(100, ((average(counterValues) - 45) / 10) * 100))
-      : 0;
+  if (!synergyValues.length) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, average(synergyValues) * 10));
+}
+
+function calculateThreatAgainstOurTeam(hero, draftState, draftDataset) {
+  const heroData = getHeroDataset(hero, draftDataset);
+
+  if (!heroData?.vs || !draftState?.ourPicks?.length) {
+    return 0;
+  }
+
+  const threatValues = [];
+
+  for (const ourPick of draftState.ourPicks) {
+    const relation = heroData.vs.get(Number(ourPick.heroId));
+
+    if (!relation) continue;
+
+    /*
+     * heroId1 = candidate hero
+     * heroId2 = our hero
+     *
+     * Therefore this is the candidate's win rate
+     * against our current pick.
+     */
+
+    threatValues.push(Number(relation.winRateHeroId1 || 0));
+  }
+
+  if (!threatValues.length) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, ((average(threatValues) - 45) / 10) * 100));
+}
+
+function calculateEnemyCompositionThreat(hero, draftState, draftDataset) {
+  const heroData = getHeroDataset(hero, draftDataset);
+
+  if (!heroData) {
+    return 0;
+  }
+
+  const stun = Number(heroData.stats?.stunCount || 0);
+
+  const disable = Number(heroData.stats?.disableCount || 0);
+
+  const heroDamage = Number(heroData.stats?.heroDamage || 0);
+
+  const towerDamage = Number(heroData.stats?.towerDamage || 0);
+
+  const stunScore = Math.min(100, stun * 15);
+
+  const disableScore = Math.min(100, disable * 15);
 
   /*
-   * 3. Threat to our future picks
+   * These are intentionally relative rather than
+   * absolute values. The actual normalization can
+   * be improved later with a larger dataset.
+   */
+
+  const heroDamageScore = heroDamage > 0 ? 60 : 0;
+
+  const towerDamageScore = towerDamage > 0 ? 60 : 0;
+
+  return (
+    stunScore * 0.3 +
+    disableScore * 0.3 +
+    heroDamageScore * 0.2 +
+    towerDamageScore * 0.2
+  );
+}
+
+function calculateEnemyPlayerThreat(hero, draftSetup) {
+  /*
+   * We currently only know OUR configured player pools.
    *
-   * If this hero is currently a strong option for one of
-   * our configured players, banning it can be valuable.
+   * Therefore this is intentionally kept separate from
+   * enemy intent. It can later be replaced with actual
+   * enemy player-pool data if available.
    */
-  const configuredPlayers = draftSetup?.players || [];
 
-  let playerThreat = 0;
-
-  for (const player of configuredPlayers) {
-    const poolHero = player?.heroPool?.find(
-      (poolItem) => Number(poolItem.heroId) === Number(hero.id),
-    );
-
-    if (!poolHero) continue;
-
-    const comfort = Number(poolHero.comfort || 0);
-
-    playerThreat = Math.max(playerThreat, comfort * 20);
-  }
-
-  /*
-   * 4. Explicit team threat
-   */
   const configuredThreats = draftSetup?.teamThreats || [];
 
   const isConfiguredThreat = configuredThreats.some(
@@ -149,26 +303,104 @@ function calculateBanScore({ hero, draftState, draftSetup, draftDataset }) {
       Number(hero.id),
   );
 
-  const teamThreat = isConfiguredThreat ? 100 : 0;
+  return isConfiguredThreat ? 100 : 0;
+}
+
+function calculateBanScore({
+  hero,
+  draftState,
+  draftSetup,
+  draftDataset,
+  heroes,
+}) {
+  const heroData = getHeroDataset(hero, draftDataset);
+
+  if (!heroData) {
+    return {
+      score: 0,
+      breakdown: {
+        meta: 0,
+        enemyRoleNeed: 0,
+        enemySynergy: 0,
+        threatToOurTeam: 0,
+        enemyComposition: 0,
+        teamThreat: 0,
+      },
+    };
+  }
 
   /*
-   * Final ban score
+   * 1. Meta
+   */
+  const metaScore = calculateBanMetaScore(hero, draftDataset);
+
+  /*
+   * 2. What role / function does the enemy
+   * currently need?
+   */
+  const enemyRoleNeed = calculateEnemyRoleNeed(hero, draftState, heroes);
+
+  /*
+   * 3. How much better does this hero make
+   * the enemy's existing picks?
+   */
+  const enemySynergy = calculateEnemySynergyThreat(
+    hero,
+    draftState,
+    draftDataset,
+  );
+
+  /*
+   * 4. How dangerous is this hero against
+   * our current picks?
+   */
+  const threatToOurTeam = calculateThreatAgainstOurTeam(
+    hero,
+    draftState,
+    draftDataset,
+  );
+
+  /*
+   * 5. Does the hero add important tools
+   * to the enemy composition?
+   */
+  const enemyComposition = calculateEnemyCompositionThreat(
+    hero,
+    draftState,
+    draftDataset,
+  );
+
+  /*
+   * 6. Explicit configured team threat.
+   */
+  const teamThreat = calculateEnemyPlayerThreat(hero, draftSetup);
+
+  /*
+   * Final BAN priority.
    *
-   * Contextual threat is more important than raw meta,
-   * while explicit team threats receive a strong boost.
+   * Enemy intent is deliberately the largest component.
+   *
+   * The question is:
+   *
+   * "If we leave this hero available,
+   * how much stronger could the enemy draft become?"
    */
   const score =
-    metaScore * 0.25 +
-    enemyThreat * 0.35 +
-    playerThreat * 0.15 +
-    teamThreat * 0.25;
+    metaScore * 0.15 +
+    enemyRoleNeed * 0.25 +
+    enemySynergy * 0.2 +
+    threatToOurTeam * 0.15 +
+    enemyComposition * 0.1 +
+    teamThreat * 0.15;
 
   return {
     score,
     breakdown: {
       meta: metaScore,
-      enemyThreat,
-      playerThreat,
+      enemyRoleNeed,
+      enemySynergy,
+      threatToOurTeam,
+      enemyComposition,
       teamThreat,
     },
   };
@@ -197,12 +429,6 @@ export function getDraftSuggestions({
       bestBans: [],
       teamThreats: [],
     };
-  }
-
-  function average(values) {
-    if (!values.length) return 0;
-
-    return values.reduce((sum, value) => sum + value, 0) / values.length;
   }
 
   const availableHeroes = getAvailableHeroes(heroes, draftState);
@@ -273,6 +499,7 @@ export function getDraftSuggestions({
       draftState,
       draftSetup,
       draftDataset,
+      heroes,
     });
 
     return {
@@ -287,8 +514,8 @@ export function getDraftSuggestions({
   const bestBans = sortedBans.slice(0, 3);
 
   /*
-   * Team Threats are explicit threats configured
-   * by the user.
+   * Explicit team threats remain a separate
+   * category for now.
    */
   const threatIds = new Set(
     (draftSetup?.teamThreats || []).map((threat) =>
