@@ -11,7 +11,7 @@ globalThis.__DOTA_ANALYTICS_STRATZ_PENDING__ = pendingRequests;
 const CACHE_TTL = {
   static: 4 * 24 * 60 * 60 * 1000, // 4 days
   player: 12 * 60 * 60 * 1000, // 12 hours
-  meta: 60 * 60 * 1000, // 1 hour
+  meta: 24 * 60 * 60 * 1000, // 24 hours
   draft: 60 * 60 * 1000, // 1 hour
 };
 
