@@ -25,6 +25,30 @@ function calculateWilsonScore(winCount, matchCount) {
   return Math.max(0, Math.min(1, score));
 }
 
+function calculateChangeState(delta) {
+  if (delta >= 2) {
+    return "strongUp";
+  }
+
+  if (delta >= 0.25) {
+    return "up";
+  }
+
+  if (delta <= -2) {
+    return "strongDown";
+  }
+
+  if (delta <= -0.25) {
+    return "down";
+  }
+
+  return "stable";
+}
+
+function calculateDailyRating(stat) {
+  return calculateWilsonScore(stat.winCount, stat.matchCount) * 100;
+}
+
 function calculateMetaStats(stats, heroes) {
   if (!stats.length || !heroes.length) {
     return [];
@@ -39,6 +63,50 @@ function calculateMetaStats(stats, heroes) {
   }
 
   const scoredStats = validStats.map((hero) => {
+    const dailyStats = [...(hero.dailyStats || [])]
+      .sort((a, b) => Number(a.day) - Number(b.day))
+      .map((day) => ({
+        ...day,
+        rating: calculateDailyRating(day),
+        winRate:
+          day.matchCount > 0
+            ? (day.winCount / day.matchCount) * 100
+            : 0,
+      }));
+
+    const splitIndex = Math.floor(dailyStats.length / 2);
+
+    const previousStats = dailyStats.slice(0, splitIndex);
+    const currentStats = dailyStats.slice(splitIndex);
+
+    const previousWins = previousStats.reduce(
+      (total, day) => total + Number(day.winCount || 0),
+      0,
+    );
+
+    const previousMatches = previousStats.reduce(
+      (total, day) => total + Number(day.matchCount || 0),
+      0,
+    );
+
+    const currentWins = currentStats.reduce(
+      (total, day) => total + Number(day.winCount || 0),
+      0,
+    );
+
+    const currentMatches = currentStats.reduce(
+      (total, day) => total + Number(day.matchCount || 0),
+      0,
+    );
+
+    const previousRating =
+      calculateWilsonScore(previousWins, previousMatches) * 100;
+
+    const currentRating =
+      calculateWilsonScore(currentWins, currentMatches) * 100;
+
+    const ratingChange = currentRating - previousRating;
+
     const metaScore =
       calculateWilsonScore(hero.winCount, hero.matchCount) * 100;
 
@@ -46,6 +114,11 @@ function calculateMetaStats(stats, heroes) {
       ...hero,
       heroId: Number(hero.heroId),
       metaScore,
+      previousRating,
+      currentRating,
+      ratingChange,
+      changeState: calculateChangeState(ratingChange),
+      dailyStats,
     };
   });
 
