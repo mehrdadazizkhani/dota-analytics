@@ -6,6 +6,7 @@ import Heroes from "../pages/Heroes";
 import HeroDetail from "../pages/HeroDetail";
 import Players from "../pages/Players";
 import DraftLab from "../pages/DraftLab";
+import Meta from "../pages/Meta";
 
 function Layout() {
   return (
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
       {
         path: "/heroes",
         element: <Heroes />,
+      },
+      {
+        path: "/meta",
+        element: <Meta />,
       },
       {
         path: "/heroes/:heroId",
