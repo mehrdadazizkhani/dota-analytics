@@ -7,10 +7,7 @@ import { getHeroAsset } from "../lib/assets/heroes";
 import { Link } from "react-router-dom";
 
 function formatPercent(value) {
-  if (!Number.isFinite(value)) {
-    return "—";
-  }
-
+  if (!Number.isFinite(value)) return "—";
   return `${value.toFixed(1)}%`;
 }
 
@@ -28,7 +25,6 @@ function SortButton({ label, active, direction, onClick }) {
       }`}
     >
       <span>{label}</span>
-
       {active && (
         <span className="text-[8px] text-red-400">
           {direction === "desc" ? "↓" : "↑"}
@@ -40,7 +36,6 @@ function SortButton({ label, active, direction, onClick }) {
 
 function Meta() {
   const { heroes, loading: heroesLoading, error: heroesError } = useHeroes();
-
   const { meta, loading: metaLoading, error: metaError } = useHeroMeta(heroes);
 
   const [sortKey, setSortKey] = useState("rating");
@@ -54,40 +49,43 @@ function Meta() {
     [heroes],
   );
 
-  const rows = useMemo(() => {
-    const baseRows = [...meta]
-      .map((item) => ({
-        ...item,
-        hero: heroMap.get(Number(item.heroId)),
-      }))
-      .filter((item) => item.hero);
+  const baseRows = useMemo(
+    () =>
+      [...meta]
+        .map((item) => ({
+          ...item,
+          hero: heroMap.get(Number(item.heroId)),
+        }))
+        .filter((item) => item.hero),
+    [meta, heroMap],
+  );
 
-    return baseRows.sort((a, b) => {
-      let result = 0;
+  const ratingRows = useMemo(
+    () =>
+      [...baseRows].sort((a, b) => {
+        if (b.metaScore !== a.metaScore) return b.metaScore - a.metaScore;
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+        return b.matchCount - a.matchCount;
+      }),
+    [baseRows],
+  );
 
-      if (sortKey === "rating") {
-        result = a.metaScore - b.metaScore;
-      }
+  const rows = useMemo(
+    () =>
+      [...baseRows].sort((a, b) => {
+        let result = 0;
 
-      if (sortKey === "winRate") {
-        result = a.winRate - b.winRate;
-      }
+        if (sortKey === "rating") result = a.metaScore - b.metaScore;
+        if (sortKey === "winRate") result = a.winRate - b.winRate;
+        if (sortKey === "pickRate") result = a.pickRate - b.pickRate;
+        if (sortKey === "matches") result = a.matchCount - b.matchCount;
 
-      if (sortKey === "pickRate") {
-        result = a.pickRate - b.pickRate;
-      }
+        if (result === 0) result = b.metaScore - a.metaScore;
 
-      if (sortKey === "matches") {
-        result = a.matchCount - b.matchCount;
-      }
-
-      if (result === 0) {
-        result = b.metaScore - a.metaScore;
-      }
-
-      return sortDirection === "desc" ? -result : result;
-    });
-  }, [meta, heroMap, sortKey, sortDirection]);
+        return sortDirection === "desc" ? -result : result;
+      }),
+    [baseRows, sortKey, sortDirection],
+  );
 
   function handleSort(nextKey) {
     if (sortKey === nextKey) {
@@ -104,7 +102,6 @@ function Meta() {
       <div className="mb-6">
         <div className="flex items-center gap-2">
           <span className="h-1 w-1 rounded-full bg-red-400" />
-
           <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
             Analytics
           </span>
@@ -132,11 +129,9 @@ function Meta() {
         {!loading && error && (
           <div className="flex min-h-40 flex-col items-center justify-center text-center">
             <span className="mb-3 h-1.5 w-1.5 rounded-full bg-red-400" />
-
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
               Unable to load meta data
             </p>
-
             <p className="mt-1 text-[10px] text-white/25">
               STRATZ is temporarily unavailable. Please try again.
             </p>
@@ -145,7 +140,7 @@ function Meta() {
 
         {!loading && !error && (
           <>
-            <MetaRatingChart rows={rows} />
+            <MetaRatingChart rows={ratingRows} />
 
             <div className="my-6 h-px bg-white/[0.05]" />
 
@@ -153,12 +148,10 @@ function Meta() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="h-1 w-1 rounded-full bg-red-400" />
-
                   <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
                     Hero Meta
                   </h2>
                 </div>
-
                 <p className="mt-1 text-[9px] text-white/20">
                   {rows.length} heroes ranked by Rating
                 </p>
@@ -168,41 +161,12 @@ function Meta() {
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
                 <div className="grid grid-cols-[52px_minmax(220px,1fr)_110px_110px_110px_120px] items-center border-b border-white/[0.06] px-3 py-2">
-                  <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
-                    #
-                  </span>
-
-                  <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
-                    Hero
-                  </span>
-
-                  <SortButton
-                    label="Rating"
-                    active={sortKey === "rating"}
-                    direction={sortDirection}
-                    onClick={() => handleSort("rating")}
-                  />
-
-                  <SortButton
-                    label="Win Rate"
-                    active={sortKey === "winRate"}
-                    direction={sortDirection}
-                    onClick={() => handleSort("winRate")}
-                  />
-
-                  <SortButton
-                    label="Pick Rate"
-                    active={sortKey === "pickRate"}
-                    direction={sortDirection}
-                    onClick={() => handleSort("pickRate")}
-                  />
-
-                  <SortButton
-                    label="Matches"
-                    active={sortKey === "matches"}
-                    direction={sortDirection}
-                    onClick={() => handleSort("matches")}
-                  />
+                  <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">#</span>
+                  <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">Hero</span>
+                  <SortButton label="Rating" active={sortKey === "rating"} direction={sortDirection} onClick={() => handleSort("rating")} />
+                  <SortButton label="Win Rate" active={sortKey === "winRate"} direction={sortDirection} onClick={() => handleSort("winRate")} />
+                  <SortButton label="Pick Rate" active={sortKey === "pickRate"} direction={sortDirection} onClick={() => handleSort("pickRate")} />
+                  <SortButton label="Matches" active={sortKey === "matches"} direction={sortDirection} onClick={() => handleSort("matches")} />
                 </div>
 
                 <div className="divide-y divide-white/[0.04]">
@@ -218,9 +182,7 @@ function Meta() {
                       >
                         <span
                           className={`text-[10px] tabular-nums ${
-                            rank <= 3
-                              ? "font-semibold text-red-400"
-                              : "text-white/25"
+                            rank <= 3 ? "font-semibold text-red-400" : "text-white/25"
                           }`}
                         >
                           {String(rank).padStart(2, "0")}
@@ -235,12 +197,10 @@ function Meta() {
                               loading="lazy"
                             />
                           </div>
-
                           <div className="min-w-0">
                             <div className="truncate text-[10px] font-medium text-white/75">
                               {hero.displayName || hero.name}
                             </div>
-
                             <div className="mt-0.5 truncate text-[8px] uppercase tracking-[0.08em] text-white/20">
                               {hero.shortName}
                             </div>
@@ -256,11 +216,9 @@ function Meta() {
                         <div className="text-right text-[10px] tabular-nums text-white/55">
                           {formatPercent(item.winRate)}
                         </div>
-
                         <div className="text-right text-[10px] tabular-nums text-white/55">
                           {formatPercent(item.pickRate)}
                         </div>
-
                         <div className="text-right text-[10px] tabular-nums text-white/35">
                           {formatMatches(item.matchCount)}
                         </div>
