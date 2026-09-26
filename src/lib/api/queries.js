@@ -81,6 +81,7 @@ export const GET_HERO_META = `
   query GetHeroMeta {
     heroStats {
       winDay(take: 8) {
+        day
         heroId
         winCount
         matchCount
