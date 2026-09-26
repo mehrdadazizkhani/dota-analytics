@@ -114,30 +114,52 @@ function formatTrendDate(timestamp) {
   });
 }
 
-function TrendChart({ trend }) {
+function TrendChart({ trend, change }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
   if (!trend?.length) {
     return (
-      <div className="flex h-28 items-center justify-center text-[9px] uppercase tracking-[0.14em] text-white/20">
+      <div className="flex h-36 items-center justify-center rounded-xl border border-white/[0.05] bg-black/20 text-[9px] uppercase tracking-[0.14em] text-white/20">
         No trend data
       </div>
     );
   }
 
-  const values = trend.map((item) => item.rating);
+  const values = trend.map((item) => Number(item.rating));
 
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
+  const currentValue = values[values.length - 1];
+  const startValue = values[0];
 
-  const padding = Math.max(0.5, (maxValue - minValue) * 0.25);
+  const spread = maxValue - minValue;
 
-  const minY = minValue - padding;
-  const maxY = maxValue + padding;
-  const range = maxY - minY || 1;
+  const chartPadding = Math.max(spread * 0.35, 0.12);
+
+  const minY = Math.max(0, minValue - chartPadding);
+  const maxY = maxValue + chartPadding;
+  const range = Math.max(maxY - minY, 0.001);
+
+  const width = 2000;
+  const height = 300;
+
+  const padding = {
+    top: 28,
+    right: 0,
+    bottom: 42,
+    left: 0,
+  };
+
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
 
   const points = trend.map((item, index) => {
-    const x = trend.length === 1 ? 50 : (index / (trend.length - 1)) * 100;
+    const x =
+      trend.length === 1
+        ? width / 2
+        : padding.left + (index / (trend.length - 1)) * plotWidth;
 
-    const y = 100 - ((item.rating - minY) / range) * 100;
+    const y = padding.top + (1 - (item.rating - minY) / range) * plotHeight;
 
     return {
       ...item,
@@ -146,61 +168,334 @@ function TrendChart({ trend }) {
     };
   });
 
-  const linePoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const linePath = points
+    .map((point, index) => {
+      if (index === 0) {
+        return `M ${point.x} ${point.y}`;
+      }
 
-  const areaPoints = [
-    `0,100`,
-    ...points.map((point) => `${point.x},${point.y}`),
-    `100,100`,
-  ].join(" ");
+      const previous = points[index - 1];
+
+      const controlX = previous.x + (point.x - previous.x) * 0.5;
+
+      return `
+        C ${controlX} ${previous.y},
+          ${controlX} ${point.y},
+          ${point.x} ${point.y}
+      `;
+    })
+    .join(" ");
+
+  const areaPath = `
+    ${linePath}
+    L ${points[points.length - 1].x} ${padding.top + plotHeight}
+    L ${points[0].x} ${padding.top + plotHeight}
+    Z
+  `;
+
+  const hoveredPoint = hoveredIndex !== null ? points[hoveredIndex] : null;
+
+  const changePositive = Number(change) > 0;
+  const changeNegative = Number(change) < 0;
+
+  const changeClass = changePositive
+    ? "text-emerald-400"
+    : changeNegative
+      ? "text-red-400"
+      : "text-white/35";
 
   return (
-    <div className="mt-4">
-      <div className="relative h-32">
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          className="absolute inset-0 h-full w-full overflow-visible"
-        >
-          <polygon points={areaPoints} fill="rgba(248,113,113,0.06)" />
+    <div className="mt-4 overflow-hidden rounded-xl border border-white/[0.055] bg-[#08090b]">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-white/[0.045] px-4 py-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="h-1 w-1 rounded-full bg-red-400" />
 
-          <polyline
-            points={linePoints}
-            fill="none"
-            stroke="rgba(248,113,113,0.9)"
-            strokeWidth="1.5"
-            vectorEffect="non-scaling-stroke"
-          />
+            <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/55">
+              8 Day Rating
+            </span>
+          </div>
 
-          {points.map((point) => (
-            <circle
-              key={point.day}
-              cx={point.x}
-              cy={point.y}
-              r="1.8"
-              fill="rgb(248,113,113)"
-              vectorEffect="non-scaling-stroke"
+          <div className="mt-1 text-[8px] text-white/20">
+            Daily meta rating movement
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="relative pt-3">
+        <div className="relative h-48 w-full overflow-visible rounded-lg bg-white/[0.012]">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="absolute inset-0 h-full w-full overflow-visible"
+          >
+            <defs>
+              <linearGradient
+                id="ratingAreaGradient"
+                x1="0"
+                x2="0"
+                y1="0"
+                y2="1"
+              >
+                <stop
+                  offset="0%"
+                  stopColor="rgb(248 113 113)"
+                  stopOpacity="0.20"
+                />
+
+                <stop
+                  offset="100%"
+                  stopColor="rgb(248 113 113)"
+                  stopOpacity="0"
+                />
+              </linearGradient>
+
+              <filter
+                id="ratingGlow"
+                x="-100%"
+                y="-100%"
+                width="300%"
+                height="300%"
+              >
+                <feGaussianBlur stdDeviation="5" result="blur" />
+
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Horizontal grid */}
+            {[0, 1, 2, 3].map((index) => {
+              const ratio = index / 3;
+
+              const y = padding.top + ratio * plotHeight;
+
+              const value = maxY - ratio * (maxY - minY);
+
+              return (
+                <g key={index}>
+                  <line
+                    x1={padding.left}
+                    x2={width - padding.right}
+                    y1={y}
+                    y2={y}
+                    stroke="rgba(255,255,255,0.045)"
+                    strokeWidth="1"
+                  />
+                </g>
+              );
+            })}
+
+            {/* Vertical guides */}
+            {points.map((point, index) => (
+              <line
+                key={`guide-${index}`}
+                x1={point.x}
+                x2={point.x}
+                y1={padding.top}
+                y2={padding.top + plotHeight}
+                stroke="rgba(255,255,255,0.025)"
+                strokeWidth="1"
+              />
+            ))}
+
+            {/* Area */}
+            <path d={areaPath} fill="url(#ratingAreaGradient)" />
+
+            {/* Glow line */}
+            <path
+              d={linePath}
+              fill="none"
+              stroke="rgb(248 113 113)"
+              strokeOpacity="0.22"
+              strokeWidth="7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#ratingGlow)"
             />
-          ))}
-        </svg>
 
-        <div className="absolute inset-x-0 bottom-0 flex justify-between pt-2">
-          {trend.map((item) => (
-            <span key={item.day} className="text-[8px] text-white/20">
+            {/* Main line */}
+            <path
+              d={linePath}
+              fill="none"
+              stroke="rgb(248 113 113)"
+              strokeOpacity="0.95"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            {/* Points */}
+            {points.map((point, index) => {
+              const active = hoveredIndex === index;
+              const latest = index === points.length - 1;
+
+              return (
+                <g
+                  key={point.day}
+                  onPointerEnter={() => setHoveredIndex(index)}
+                  onPointerLeave={() => setHoveredIndex(null)}
+                  className="cursor-crosshair"
+                >
+                  {/* Invisible hit area */}
+                  <circle cx={point.x} cy={point.y} r="18" fill="transparent" />
+
+                  {/* Latest halo */}
+                  {latest && (
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="9"
+                      fill={
+                        index === points.length - 1
+                          ? "rgb(248 113 113)"
+                          : "#08090b"
+                      }
+                      stroke="rgb(248 113 113)"
+                      strokeOpacity="0.20"
+                      strokeWidth="4"
+                    />
+                  )}
+
+                  {/* Point */}
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={active || latest ? 4 : 2.5}
+                    fill="#08090b"
+                    stroke="rgb(248 113 113)"
+                    strokeWidth={active || latest ? 2 : 1.5}
+                  />
+
+                  {latest && (
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="1.5"
+                      fill="rgb(248 113 113)"
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Tooltip */}
+          {hoveredPoint && (
+            <div
+              className="pointer-events-none absolute z-50 w-36 -translate-x-1/2 rounded-lg border border-white/[0.08] bg-[#111318]/95 px-3 py-2.5 shadow-2xl backdrop-blur-xl"
+              style={{
+                left: `${Math.min(
+                  88,
+                  Math.max(12, (hoveredPoint.x / width) * 100),
+                )}%`,
+                top: `${Math.max(4, (hoveredPoint.y / height) * 100 - 26)}%`,
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[8px] uppercase tracking-[0.12em] text-white/25">
+                  {formatTrendDate(hoveredPoint.day)}
+                </span>
+
+                <span className="text-[8px] text-white/20">
+                  DAY {hoveredIndex + 1}
+                </span>
+              </div>
+
+              <div className="mt-1.5 text-[15px] font-semibold tabular-nums text-white">
+                {Number(hoveredPoint.rating).toFixed(2)}
+              </div>
+
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-white/[0.05] pt-2">
+                <div>
+                  <div className="text-[6px] uppercase tracking-[0.12em] text-white/20">
+                    Win Rate
+                  </div>
+
+                  <div className="mt-0.5 text-[9px] tabular-nums text-white/55">
+                    {hoveredPoint.matchCount
+                      ? (
+                          (hoveredPoint.winCount / hoveredPoint.matchCount) *
+                          100
+                        ).toFixed(1)
+                      : "—"}
+                    %
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[6px] uppercase tracking-[0.12em] text-white/20">
+                    Matches
+                  </div>
+
+                  <div className="mt-0.5 text-[9px] tabular-nums text-white/55">
+                    {Number(hoveredPoint.matchCount || 0).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Dates */}
+        <div className="mt-2 flex justify-between px-1">
+          {trend.map((item, index) => (
+            <span
+              key={item.day}
+              className={`text-[7px] tabular-nums ${
+                index === trend.length - 1 ? "text-white/45" : "text-white/20"
+              }`}
+            >
               {formatTrendDate(item.day)}
             </span>
           ))}
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-[8px] uppercase tracking-[0.14em] text-white/20">
-          8-day Rating
-        </span>
+      {/* Stats */}
+      <div className="mt-4 grid grid-cols-4 border-t border-white/[0.045]">
+        <div className="border-r border-white/[0.045] px-4 py-3">
+          <div className="text-[7px] uppercase tracking-[0.12em] text-white/20">
+            Start
+          </div>
 
-        <span className="text-[9px] tabular-nums text-white/30">
-          {minValue.toFixed(2)} — {maxValue.toFixed(2)}
-        </span>
+          <div className="mt-1 text-[11px] font-semibold tabular-nums text-white/60">
+            {startValue.toFixed(2)}
+          </div>
+        </div>
+
+        <div className="border-r border-white/[0.045] px-4 py-3">
+          <div className="text-[7px] uppercase tracking-[0.12em] text-white/20">
+            Low
+          </div>
+
+          <div className="mt-1 text-[11px] font-semibold tabular-nums text-white/45">
+            {minValue.toFixed(2)}
+          </div>
+        </div>
+
+        <div className="border-r border-white/[0.045] px-4 py-3">
+          <div className="text-[7px] uppercase tracking-[0.12em] text-white/20">
+            High
+          </div>
+
+          <div className="mt-1 text-[11px] font-semibold tabular-nums text-white/45">
+            {maxValue.toFixed(2)}
+          </div>
+        </div>
+
+        <div className="px-4 py-3">
+          <div className="text-[7px] uppercase tracking-[0.12em] text-white/20">
+            Current
+          </div>
+
+          <div className="mt-1 text-[11px] font-semibold tabular-nums text-white">
+            {currentValue.toFixed(2)}
+          </div>
+        </div>
       </div>
     </div>
   );

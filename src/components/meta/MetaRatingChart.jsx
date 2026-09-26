@@ -264,9 +264,9 @@ function MetaRatingChart({ rows }) {
         >
           <defs>
             <linearGradient id="heroBarFade" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="white" stopOpacity="0.95" />
+              <stop offset="0%" stopColor="#222222" stopOpacity="0.95" />
 
-              <stop offset="100%" stopColor="white" stopOpacity="0.48" />
+              <stop offset="100%" stopColor="#111111" stopOpacity="0.48" />
             </linearGradient>
 
             <linearGradient id="heroCardImageFade" x1="0" x2="0" y1="0" y2="1">
@@ -435,16 +435,6 @@ function MetaRatingChart({ rows }) {
                       transform: isHovered ? "scale(1.025)" : "scale(1)",
                       transition: "transform 180ms ease",
                     }}
-                  />
-
-                  {/* Image fade */}
-                  <rect
-                    x={cardX + 2}
-                    y={cardY + imageHeight * 0.42}
-                    width={cardWidth - 4}
-                    height={imageHeight * 0.58}
-                    fill="url(#heroCardImageFade)"
-                    pointerEvents="none"
                   />
 
                   {/* Hero name */}
