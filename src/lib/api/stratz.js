@@ -57,36 +57,27 @@ export async function getHero(heroId) {
 export async function getHeroMeta() {
   const data = await requestStratz(GET_HERO_META);
 
-  const stats = (data.heroStats?.winDay || [])
-    .map((stat) => ({
-      day: Number(stat.day),
-      heroId: Number(stat.heroId),
-      winCount: Number(stat.winCount || 0),
-      matchCount: Number(stat.matchCount || 0),
-    }))
-    .filter(
-      (stat) =>
-        stat.day > 0 &&
-        stat.heroId > 0 &&
-        stat.matchCount > 0,
-    )
-    .sort((a, b) => a.day - b.day);
-
+  const stats = data.heroStats?.winDay || [];
   const heroStatsMap = new Map();
 
   for (const stat of stats) {
-    const existing = heroStatsMap.get(stat.heroId);
+    const heroId = Number(stat.heroId);
+
+    if (!heroId) {
+      continue;
+    }
+
+    const existing = heroStatsMap.get(heroId);
 
     if (existing) {
-      existing.winCount += stat.winCount;
-      existing.matchCount += stat.matchCount;
-      existing.dailyStats.push(stat);
+      existing.winCount += Number(stat.winCount || 0);
+
+      existing.matchCount += Number(stat.matchCount || 0);
     } else {
-      heroStatsMap.set(stat.heroId, {
-        heroId: stat.heroId,
-        winCount: stat.winCount,
-        matchCount: stat.matchCount,
-        dailyStats: [stat],
+      heroStatsMap.set(heroId, {
+        heroId,
+        winCount: Number(stat.winCount || 0),
+        matchCount: Number(stat.matchCount || 0),
       });
     }
   }
@@ -111,7 +102,6 @@ export async function getHeroMeta() {
       matchCount: hero.matchCount,
       winRate,
       pickRate,
-      dailyStats: hero.dailyStats,
     };
   });
 }
