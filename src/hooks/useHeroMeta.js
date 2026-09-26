@@ -62,6 +62,17 @@ function calculateMetaStats(stats, heroes) {
     return [];
   }
 
+  const allDays = [
+    ...new Set(
+      validStats.flatMap((hero) =>
+        (hero.dailyStats || []).map((day) => Number(day.day)),
+      ),
+    ),
+  ].sort((a, b) => a - b);
+
+  const splitIndex = Math.floor(allDays.length / 2);
+  const previousDays = new Set(allDays.slice(0, splitIndex));
+
   const scoredStats = validStats.map((hero) => {
     const dailyStats = [...(hero.dailyStats || [])]
       .sort((a, b) => Number(a.day) - Number(b.day))
@@ -74,10 +85,13 @@ function calculateMetaStats(stats, heroes) {
             : 0,
       }));
 
-    const splitIndex = Math.floor(dailyStats.length / 2);
+    const previousStats = dailyStats.filter((day) =>
+      previousDays.has(Number(day.day)),
+    );
 
-    const previousStats = dailyStats.slice(0, splitIndex);
-    const currentStats = dailyStats.slice(splitIndex);
+    const currentStats = dailyStats.filter(
+      (day) => !previousDays.has(Number(day.day)),
+    );
 
     const previousWins = previousStats.reduce(
       (total, day) => total + Number(day.winCount || 0),
