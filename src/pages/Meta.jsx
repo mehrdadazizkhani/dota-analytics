@@ -18,14 +18,6 @@ function formatMatches(value) {
   return new Intl.NumberFormat("en-US").format(Number(value) || 0);
 }
 
-const CHANGE_CONFIG = {
-  strongUp: { icon: "↑↑", className: "text-emerald-400" },
-  up: { icon: "↑", className: "text-emerald-300/70" },
-  stable: { icon: "→", className: "text-white/25" },
-  down: { icon: "↓", className: "text-red-300/70" },
-  strongDown: { icon: "↓↓", className: "text-red-400" },
-};
-
 function formatDay(day) {
   if (!Number.isFinite(day)) {
     return "—";
@@ -35,6 +27,34 @@ function formatDay(day) {
     month: "short",
     day: "numeric",
   }).format(new Date(day * 1000));
+}
+
+const CHANGE_CONFIG = {
+  strongUp: { icon: "↑↑", className: "text-emerald-400" },
+  up: { icon: "↑", className: "text-emerald-300/70" },
+  stable: { icon: "→", className: "text-white/25" },
+  down: { icon: "↓", className: "text-red-300/70" },
+  strongDown: { icon: "↓↓", className: "text-red-400" },
+};
+
+function SortButton({ label, active, direction, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center justify-end gap-1 text-[8px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+        active ? "text-white/60" : "text-white/20 hover:text-white/40"
+      }`}
+    >
+      <span>{label}</span>
+
+      {active && (
+        <span className="text-[8px] text-red-400">
+          {direction === "desc" ? "↓" : "↑"}
+        </span>
+      )}
+    </button>
+  );
 }
 
 function RatingBar({ value }) {
@@ -139,16 +159,8 @@ function RatingTrend({ item }) {
               y1="0"
               y2="1"
             >
-              <stop
-                offset="0%"
-                stopColor="rgb(248 113 113)"
-                stopOpacity="0.14"
-              />
-              <stop
-                offset="100%"
-                stopColor="rgb(248 113 113)"
-                stopOpacity="0"
-              />
+              <stop offset="0%" stopColor="rgb(248 113 113)" stopOpacity="0.14" />
+              <stop offset="100%" stopColor="rgb(248 113 113)" stopOpacity="0" />
             </linearGradient>
           </defs>
 
@@ -156,7 +168,6 @@ function RatingTrend({ item }) {
             const y =
               padding.top +
               (index / 2) * (height - padding.top - padding.bottom);
-
             const value =
               chartMax - (index / 2) * (chartMax - chartMin);
 
@@ -269,29 +280,8 @@ function RatingTrend({ item }) {
   );
 }
 
-function SortButton({ label, active, direction, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex w-full items-center justify-end gap-1 text-[8px] font-semibold uppercase tracking-[0.14em] transition-colors ${
-        active ? "text-white/60" : "text-white/20 hover:text-white/40"
-      }`}
-    >
-      <span>{label}</span>
-
-      {active && (
-        <span className="text-[8px] text-red-400">
-          {direction === "desc" ? "↓" : "↑"}
-        </span>
-      )}
-    </button>
-  );
-}
-
 function Meta() {
   const { heroes, loading: heroesLoading, error: heroesError } = useHeroes();
-
   const { meta, loading: metaLoading, error: metaError } = useHeroMeta(heroes);
 
   const [sortKey, setSortKey] = useState("rating");
@@ -360,7 +350,6 @@ function Meta() {
       <div className="mb-6">
         <div className="flex items-center gap-2">
           <span className="h-1 w-1 rounded-full bg-red-400" />
-
           <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
             Analytics
           </span>
@@ -388,11 +377,9 @@ function Meta() {
         {!loading && error && (
           <div className="flex min-h-40 flex-col items-center justify-center text-center">
             <span className="mb-3 h-1.5 w-1.5 rounded-full bg-red-400" />
-
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
               Unable to load meta data
             </p>
-
             <p className="mt-1 text-[10px] text-white/25">
               STRATZ is temporarily unavailable. Please try again.
             </p>
@@ -409,7 +396,6 @@ function Meta() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="h-1 w-1 rounded-full bg-red-400" />
-
                   <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
                     Hero Meta
                   </h2>
@@ -437,6 +423,7 @@ function Meta() {
                   <span className="text-right text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
                     Change
                   </span>
+
                   <SortButton
                     label="Rating"
                     active={sortKey === "rating"}
@@ -542,10 +529,14 @@ function Meta() {
                           </div>
 
                           <div className="flex items-center justify-end gap-1.5">
-                            <span className={`text-[12px] font-semibold leading-none ${change.className}`}>
+                            <span
+                              className={`text-[12px] font-semibold leading-none ${change.className}`}
+                            >
                               {change.icon}
                             </span>
-                            <span className={`text-[9px] tabular-nums ${change.className}`}>
+                            <span
+                              className={`text-[9px] tabular-nums ${change.className}`}
+                            >
                               {item.ratingChange >= 0 ? "+" : ""}
                               {item.ratingChange.toFixed(2)}
                             </span>
@@ -574,55 +565,6 @@ function Meta() {
                       </div>
                     );
                   })}
-                        <span
-                          className={`text-[10px] tabular-nums ${
-                            rank <= 3
-                              ? "font-semibold text-red-400"
-                              : "text-white/25"
-                          }`}
-                        >
-                          {String(rank).padStart(2, "0")}
-                        </span>
-
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="h-8 w-8 shrink-0 overflow-hidden rounded border border-white/[0.08] bg-white/[0.025]">
-                            <img
-                              src={getHeroAsset(hero, "portrait")}
-                              alt=""
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className="truncate text-[10px] font-medium text-white/75">
-                              {hero.displayName || hero.name}
-                            </div>
-
-                            <div className="mt-0.5 truncate text-[8px] uppercase tracking-[0.08em] text-white/20">
-                              {hero.shortName}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-[10px] font-semibold tabular-nums text-white/80">
-                            {item.metaScore.toFixed(2)}
-                          </span>
-                        </div>
-
-                        <div className="text-right text-[10px] tabular-nums text-white/55">
-                          {formatPercent(item.winRate)}
-                        </div>
-
-                        <div className="text-right text-[10px] tabular-nums text-white/55">
-                          {formatPercent(item.pickRate)}
-                        </div>
-
-                        <div className="text-right text-[10px] tabular-nums text-white/35">
-                          {formatMatches(item.matchCount)}
-                        </div>
-
                 </div>
               </div>
             </div>
