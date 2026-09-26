@@ -4,7 +4,6 @@ import { useHeroMeta } from "../hooks/useHeroMeta";
 import Widget from "../components/ui/Widget";
 import MetaRatingChart from "../components/meta/MetaRatingChart";
 import { getHeroAsset } from "../lib/assets/heroes";
-import { Link } from "react-router-dom";
 
 function formatPercent(value) {
   if (!Number.isFinite(value)) {
@@ -16,6 +15,14 @@ function formatPercent(value) {
 
 function formatMatches(value) {
   return new Intl.NumberFormat("en-US").format(Number(value) || 0);
+}
+
+function formatChange(value) {
+  if (!Number.isFinite(value) || Math.abs(value) < 0.01) {
+    return "0.00";
+  }
+
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
 }
 
 function SortButton({ label, active, direction, onClick }) {
@@ -38,6 +45,167 @@ function SortButton({ label, active, direction, onClick }) {
   );
 }
 
+function ChangeIndicator({ state, value }) {
+  const config = {
+    strongUp: {
+      symbol: "↑↑",
+      className: "text-emerald-400",
+    },
+    up: {
+      symbol: "↑",
+      className: "text-emerald-400/80",
+    },
+    stable: {
+      symbol: "→",
+      className: "text-white/25",
+    },
+    down: {
+      symbol: "↓",
+      className: "text-red-400/80",
+    },
+    strongDown: {
+      symbol: "↓↓",
+      className: "text-red-400",
+    },
+  };
+
+  const current = config[state] || config.stable;
+
+  return (
+    <div className="flex items-center justify-end gap-1.5">
+      <span className={`text-[10px] font-semibold ${current.className}`}>
+        {current.symbol}
+      </span>
+
+      <span className={`text-[9px] tabular-nums ${current.className}`}>
+        {formatChange(value)}
+      </span>
+    </div>
+  );
+}
+
+function RatingBar({ value }) {
+  const width = Math.max(0, Math.min(100, Number(value) || 0));
+
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/[0.05]">
+        <div
+          className="h-full rounded-full bg-red-400/70"
+          style={{ width: `${width}%` }}
+        />
+      </div>
+
+      <span className="w-10 text-right text-[10px] font-semibold tabular-nums text-white/80">
+        {Number(value || 0).toFixed(2)}
+      </span>
+    </div>
+  );
+}
+
+function formatTrendDate(timestamp) {
+  if (!timestamp) {
+    return "";
+  }
+
+  return new Date(timestamp * 1000).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function TrendChart({ trend }) {
+  if (!trend?.length) {
+    return (
+      <div className="flex h-28 items-center justify-center text-[9px] uppercase tracking-[0.14em] text-white/20">
+        No trend data
+      </div>
+    );
+  }
+
+  const values = trend.map((item) => item.rating);
+
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+
+  const padding = Math.max(0.5, (maxValue - minValue) * 0.25);
+
+  const minY = minValue - padding;
+  const maxY = maxValue + padding;
+  const range = maxY - minY || 1;
+
+  const points = trend.map((item, index) => {
+    const x = trend.length === 1 ? 50 : (index / (trend.length - 1)) * 100;
+
+    const y = 100 - ((item.rating - minY) / range) * 100;
+
+    return {
+      ...item,
+      x,
+      y,
+    };
+  });
+
+  const linePoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+
+  const areaPoints = [
+    `0,100`,
+    ...points.map((point) => `${point.x},${point.y}`),
+    `100,100`,
+  ].join(" ");
+
+  return (
+    <div className="mt-4">
+      <div className="relative h-32">
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full overflow-visible"
+        >
+          <polygon points={areaPoints} fill="rgba(248,113,113,0.06)" />
+
+          <polyline
+            points={linePoints}
+            fill="none"
+            stroke="rgba(248,113,113,0.9)"
+            strokeWidth="1.5"
+            vectorEffect="non-scaling-stroke"
+          />
+
+          {points.map((point) => (
+            <circle
+              key={point.day}
+              cx={point.x}
+              cy={point.y}
+              r="1.8"
+              fill="rgb(248,113,113)"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
+
+        <div className="absolute inset-x-0 bottom-0 flex justify-between pt-2">
+          {trend.map((item) => (
+            <span key={item.day} className="text-[8px] text-white/20">
+              {formatTrendDate(item.day)}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between">
+        <span className="text-[8px] uppercase tracking-[0.14em] text-white/20">
+          8-day Rating
+        </span>
+
+        <span className="text-[9px] tabular-nums text-white/30">
+          {minValue.toFixed(2)} — {maxValue.toFixed(2)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function Meta() {
   const { heroes, loading: heroesLoading, error: heroesError } = useHeroes();
 
@@ -45,6 +213,8 @@ function Meta() {
 
   const [sortKey, setSortKey] = useState("rating");
   const [sortDirection, setSortDirection] = useState("desc");
+
+  const [expandedHeroId, setExpandedHeroId] = useState(null);
 
   const loading = heroesLoading || metaLoading;
   const error = heroesError || metaError;
@@ -67,6 +237,10 @@ function Meta() {
 
       if (sortKey === "rating") {
         result = a.metaScore - b.metaScore;
+      }
+
+      if (sortKey === "change") {
+        result = a.change - b.change;
       }
 
       if (sortKey === "winRate") {
@@ -97,6 +271,10 @@ function Meta() {
 
     setSortKey(nextKey);
     setSortDirection("desc");
+  }
+
+  function toggleExpanded(heroId) {
+    setExpandedHeroId((current) => (current === heroId ? null : heroId));
   }
 
   return (
@@ -166,8 +344,10 @@ function Meta() {
             </div>
 
             <div className="overflow-x-auto">
-              <div className="min-w-[720px]">
-                <div className="grid grid-cols-[52px_minmax(220px,1fr)_110px_110px_110px_120px] items-center border-b border-white/[0.06] px-3 py-2">
+              <div className="min-w-[860px]">
+                <div className="grid grid-cols-[40px_52px_minmax(210px,1fr)_110px_120px_110px_110px_120px] items-center border-b border-white/[0.06] px-3 py-2">
+                  <span className="text-[8px] text-white/20">+</span>
+
                   <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
                     #
                   </span>
@@ -175,6 +355,13 @@ function Meta() {
                   <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
                     Hero
                   </span>
+
+                  <SortButton
+                    label="Change"
+                    active={sortKey === "change"}
+                    direction={sortDirection}
+                    onClick={() => handleSort("change")}
+                  />
 
                   <SortButton
                     label="Rating"
@@ -209,62 +396,111 @@ function Meta() {
                   {rows.map((item, index) => {
                     const hero = item.hero;
                     const rank = index + 1;
+                    const expanded = expandedHeroId === Number(hero.id);
 
                     return (
-                      <Link
+                      <div
                         key={hero.id}
-                        to={`/heroes/${hero.id}`}
-                        className="grid grid-cols-[52px_minmax(220px,1fr)_110px_110px_110px_120px] items-center px-3 py-2.5 transition-colors hover:bg-white/[0.025]"
+                        onClick={() => toggleExpanded(Number(hero.id))}
+                        className="cursor-pointer"
                       >
-                        <span
-                          className={`text-[10px] tabular-nums ${
-                            rank <= 3
-                              ? "font-semibold text-red-400"
-                              : "text-white/25"
-                          }`}
-                        >
-                          {String(rank).padStart(2, "0")}
-                        </span>
+                        <div className="grid grid-cols-[40px_52px_minmax(210px,1fr)_110px_120px_110px_110px_120px] items-center px-3 py-2.5 transition-colors hover:bg-white/[0.025]">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpanded(Number(hero.id))}
+                            className="flex h-6 w-6 items-center justify-start text-[13px] text-white/30 transition-colors hover:text-white/70"
+                          >
+                            {expanded ? "−" : "+"}
+                          </button>
 
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="h-8 w-8 shrink-0 overflow-hidden rounded border border-white/[0.08] bg-white/[0.025]">
-                            <img
-                              src={getHeroAsset(hero, "portrait")}
-                              alt=""
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
+                          <div
+                            className={`text-[10px] tabular-nums ${
+                              rank <= 3
+                                ? "font-semibold text-red-400"
+                                : "text-white/25"
+                            }`}
+                          >
+                            {String(rank).padStart(2, "0")}
                           </div>
 
-                          <div className="min-w-0">
-                            <div className="truncate text-[10px] font-medium text-white/75">
-                              {hero.displayName || hero.name}
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="h-8 w-8 shrink-0 overflow-hidden rounded border border-white/[0.08] bg-white/[0.025]">
+                              <img
+                                src={getHeroAsset(hero, "portrait")}
+                                alt=""
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
                             </div>
 
-                            <div className="mt-0.5 truncate text-[8px] uppercase tracking-[0.08em] text-white/20">
-                              {hero.shortName}
+                            <div className="min-w-0">
+                              <div className="truncate text-[10px] font-medium text-white/75">
+                                {hero.displayName || hero.name}
+                              </div>
+
+                              <div className="mt-0.5 truncate text-[8px] uppercase tracking-[0.08em] text-white/20">
+                                {hero.shortName}
+                              </div>
                             </div>
+                          </div>
+
+                          <ChangeIndicator
+                            state={item.changeState}
+                            value={item.change}
+                          />
+
+                          <RatingBar value={item.metaScore} />
+
+                          <div className="text-right text-[10px] tabular-nums text-white/55">
+                            {formatPercent(item.winRate)}
+                          </div>
+
+                          <div className="text-right text-[10px] tabular-nums text-white/55">
+                            {formatPercent(item.pickRate)}
+                          </div>
+
+                          <div className="text-right text-[10px] tabular-nums text-white/35">
+                            {formatMatches(item.matchCount)}
                           </div>
                         </div>
 
-                        <div className="text-right">
-                          <span className="text-[10px] font-semibold tabular-nums text-white/80">
-                            {item.metaScore.toFixed(2)}
-                          </span>
-                        </div>
+                        {expanded && (
+                          <div className="border-t border-white/[0.04] bg-white/[0.012] px-6 py-4">
+                            <div className="mb-2 flex items-center justify-between">
+                              <div>
+                                <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/40">
+                                  Rating Trend
+                                </div>
 
-                        <div className="text-right text-[10px] tabular-nums text-white/55">
-                          {formatPercent(item.winRate)}
-                        </div>
+                                <div className="mt-1 text-[8px] text-white/20">
+                                  {hero.displayName || hero.name}
+                                  {" · "}8 days
+                                </div>
+                              </div>
 
-                        <div className="text-right text-[10px] tabular-nums text-white/55">
-                          {formatPercent(item.pickRate)}
-                        </div>
+                              <div className="text-right">
+                                <div
+                                  className={`text-[11px] font-semibold ${
+                                    item.change > 0
+                                      ? "text-emerald-400"
+                                      : item.change < 0
+                                        ? "text-red-400"
+                                        : "text-white/30"
+                                  }`}
+                                >
+                                  {formatChange(item.change)}
+                                </div>
 
-                        <div className="text-right text-[10px] tabular-nums text-white/35">
-                          {formatMatches(item.matchCount)}
-                        </div>
-                      </Link>
+                                <div className="text-[8px] uppercase tracking-[0.12em] text-white/20">
+                                  change
+                                </div>
+                              </div>
+                            </div>
+
+                            <TrendChart trend={item.trend} />
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

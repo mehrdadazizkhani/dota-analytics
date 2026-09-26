@@ -67,29 +67,36 @@ export async function getHeroMeta() {
       continue;
     }
 
-    const existing = heroStatsMap.get(heroId);
+    if (!heroStatsMap.has(heroId)) {
+      heroStatsMap.set(heroId, []);
+    }
 
-    if (existing) {
-      existing.winCount += Number(stat.winCount || 0);
+    heroStatsMap.get(heroId).push({
+      day: Number(stat.day),
+      heroId,
+      winCount: Number(stat.winCount || 0),
+      matchCount: Number(stat.matchCount || 0),
+    });
+  }
 
-      existing.matchCount += Number(stat.matchCount || 0);
-    } else {
-      heroStatsMap.set(heroId, {
-        heroId,
-        winCount: Number(stat.winCount || 0),
-        matchCount: Number(stat.matchCount || 0),
-      });
+  const allLatestStats = [];
+
+  for (const [, heroDays] of heroStatsMap) {
+    const sortedDays = [...heroDays].sort((a, b) => b.day - a.day);
+
+    const latest = sortedDays[0];
+
+    if (latest) {
+      allLatestStats.push(latest);
     }
   }
 
-  const aggregatedStats = Array.from(heroStatsMap.values());
-
-  const totalMatches = aggregatedStats.reduce(
+  const totalMatches = allLatestStats.reduce(
     (total, hero) => total + hero.matchCount,
     0,
   );
 
-  return aggregatedStats.map((hero) => {
+  return allLatestStats.map((hero) => {
     const winRate =
       hero.matchCount > 0 ? (hero.winCount / hero.matchCount) * 100 : 0;
 
@@ -102,6 +109,8 @@ export async function getHeroMeta() {
       matchCount: hero.matchCount,
       winRate,
       pickRate,
+      day: hero.day,
+      days: heroStatsMap.get(hero.heroId).sort((a, b) => a.day - b.day),
     };
   });
 }

@@ -25,6 +25,10 @@ function calculateWilsonScore(winCount, matchCount) {
   return Math.max(0, Math.min(1, score));
 }
 
+function calculateRating(winCount, matchCount) {
+  return calculateWilsonScore(winCount, matchCount) * 100;
+}
+
 function calculateMetaStats(stats, heroes) {
   if (!stats.length || !heroes.length) {
     return [];
@@ -39,13 +43,20 @@ function calculateMetaStats(stats, heroes) {
   }
 
   const scoredStats = validStats.map((hero) => {
-    const metaScore =
-      calculateWilsonScore(hero.winCount, hero.matchCount) * 100;
+    const metaScore = calculateRating(hero.winCount, hero.matchCount);
+
+    const trend = (hero.days || []).map((day) => ({
+      day: day.day,
+      rating: calculateRating(day.winCount, day.matchCount),
+      winCount: day.winCount,
+      matchCount: day.matchCount,
+    }));
 
     return {
       ...hero,
       heroId: Number(hero.heroId),
       metaScore,
+      trend,
     };
   });
 
@@ -65,10 +76,47 @@ function calculateMetaStats(stats, heroes) {
     sortedStats.slice(0, 20).map((hero) => Number(hero.heroId)),
   );
 
-  return scoredStats.map((hero) => ({
-    ...hero,
-    isMeta: metaHeroIds.has(Number(hero.heroId)),
-  }));
+  return scoredStats.map((hero) => {
+    const trend = hero.trend || [];
+
+    let change = 0;
+
+    if (trend.length >= 2) {
+      const midpoint = Math.floor(trend.length / 2);
+
+      const firstHalf = trend.slice(0, midpoint);
+      const secondHalf = trend.slice(midpoint);
+
+      const firstAverage =
+        firstHalf.reduce((sum, item) => sum + item.rating, 0) /
+        firstHalf.length;
+
+      const secondAverage =
+        secondHalf.reduce((sum, item) => sum + item.rating, 0) /
+        secondHalf.length;
+
+      change = secondAverage - firstAverage;
+    }
+
+    let changeState = "stable";
+
+    if (change >= 2) {
+      changeState = "strongUp";
+    } else if (change >= 0.25) {
+      changeState = "up";
+    } else if (change <= -2) {
+      changeState = "strongDown";
+    } else if (change <= -0.25) {
+      changeState = "down";
+    }
+
+    return {
+      ...hero,
+      isMeta: metaHeroIds.has(Number(hero.heroId)),
+      change,
+      changeState,
+    };
+  });
 }
 
 export function useHeroMeta(heroes) {
