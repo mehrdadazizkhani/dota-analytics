@@ -1,8 +1,10 @@
-import { Link } from "react-router-dom";
-import Widget from "../components/ui/Widget";
+import { useMemo, useState } from "react";
 import { useHeroes } from "../hooks/useHeroes";
 import { useHeroMeta } from "../hooks/useHeroMeta";
+import Widget from "../components/ui/Widget";
+import MetaRatingChart from "../components/meta/MetaRatingChart";
 import { getHeroAsset } from "../lib/assets/heroes";
+import { Link } from "react-router-dom";
 
 function formatPercent(value) {
   if (!Number.isFinite(value)) {
@@ -16,11 +18,23 @@ function formatMatches(value) {
   return new Intl.NumberFormat("en-US").format(Number(value) || 0);
 }
 
-function RatingBadge({ score }) {
+function SortButton({ label, active, direction, onClick }) {
   return (
-    <span className="tabular-nums text-white/70">
-      {Number.isFinite(score) ? score.toFixed(2) : "—"}
-    </span>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center justify-end gap-1 text-[8px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+        active ? "text-white/60" : "text-white/20 hover:text-white/40"
+      }`}
+    >
+      <span>{label}</span>
+
+      {active && (
+        <span className="text-[8px] text-red-400">
+          {direction === "desc" ? "↓" : "↑"}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -29,28 +43,61 @@ function Meta() {
 
   const { meta, loading: metaLoading, error: metaError } = useHeroMeta(heroes);
 
+  const [sortKey, setSortKey] = useState("rating");
+  const [sortDirection, setSortDirection] = useState("desc");
+
   const loading = heroesLoading || metaLoading;
   const error = heroesError || metaError;
 
-  const heroMap = new Map(heroes.map((hero) => [Number(hero.id), hero]));
+  const heroMap = useMemo(
+    () => new Map(heroes.map((hero) => [Number(hero.id), hero])),
+    [heroes],
+  );
 
-  const rows = [...meta]
-    .map((item) => ({
-      ...item,
-      hero: heroMap.get(Number(item.heroId)),
-    }))
-    .filter((item) => item.hero)
-    .sort((a, b) => {
-      if (b.metaScore !== a.metaScore) {
-        return b.metaScore - a.metaScore;
+  const rows = useMemo(() => {
+    const baseRows = [...meta]
+      .map((item) => ({
+        ...item,
+        hero: heroMap.get(Number(item.heroId)),
+      }))
+      .filter((item) => item.hero);
+
+    return baseRows.sort((a, b) => {
+      let result = 0;
+
+      if (sortKey === "rating") {
+        result = a.metaScore - b.metaScore;
       }
 
-      if (b.winRate !== a.winRate) {
-        return b.winRate - a.winRate;
+      if (sortKey === "winRate") {
+        result = a.winRate - b.winRate;
       }
 
-      return b.matchCount - a.matchCount;
+      if (sortKey === "pickRate") {
+        result = a.pickRate - b.pickRate;
+      }
+
+      if (sortKey === "matches") {
+        result = a.matchCount - b.matchCount;
+      }
+
+      if (result === 0) {
+        result = b.metaScore - a.metaScore;
+      }
+
+      return sortDirection === "desc" ? -result : result;
     });
+  }, [meta, heroMap, sortKey, sortDirection]);
+
+  function handleSort(nextKey) {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => (current === "desc" ? "asc" : "desc"));
+      return;
+    }
+
+    setSortKey(nextKey);
+    setSortDirection("desc");
+  }
 
   return (
     <div className="pb-24">
@@ -98,6 +145,10 @@ function Meta() {
 
         {!loading && !error && (
           <>
+            <MetaRatingChart rows={rows} />
+
+            <div className="my-6 h-px bg-white/[0.05]" />
+
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -109,14 +160,14 @@ function Meta() {
                 </div>
 
                 <p className="mt-1 text-[9px] text-white/20">
-                  {rows.length} heroes ranked by Meta Score
+                  {rows.length} heroes ranked by Rating
                 </p>
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
-                <div className="grid grid-cols-[52px_minmax(220px,1fr)_100px_100px_100px_120px_100px] items-center border-b border-white/[0.06] px-3 py-2">
+                <div className="grid grid-cols-[52px_minmax(220px,1fr)_110px_110px_110px_120px] items-center border-b border-white/[0.06] px-3 py-2">
                   <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
                     #
                   </span>
@@ -125,25 +176,33 @@ function Meta() {
                     Hero
                   </span>
 
-                  <span className="text-right text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
-                    Meta
-                  </span>
+                  <SortButton
+                    label="Rating"
+                    active={sortKey === "rating"}
+                    direction={sortDirection}
+                    onClick={() => handleSort("rating")}
+                  />
 
-                  <span className="text-right text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
-                    Win Rate
-                  </span>
+                  <SortButton
+                    label="Win Rate"
+                    active={sortKey === "winRate"}
+                    direction={sortDirection}
+                    onClick={() => handleSort("winRate")}
+                  />
 
-                  <span className="text-right text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
-                    Pick Rate
-                  </span>
+                  <SortButton
+                    label="Pick Rate"
+                    active={sortKey === "pickRate"}
+                    direction={sortDirection}
+                    onClick={() => handleSort("pickRate")}
+                  />
 
-                  <span className="text-right text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
-                    Matches
-                  </span>
-
-                  <span className="text-right text-[8px] font-semibold uppercase tracking-[0.14em] text-white/20">
-                    Rating
-                  </span>
+                  <SortButton
+                    label="Matches"
+                    active={sortKey === "matches"}
+                    direction={sortDirection}
+                    onClick={() => handleSort("matches")}
+                  />
                 </div>
 
                 <div className="divide-y divide-white/[0.04]">
@@ -155,7 +214,7 @@ function Meta() {
                       <Link
                         key={hero.id}
                         to={`/heroes/${hero.id}`}
-                        className="grid grid-cols-[52px_minmax(220px,1fr)_100px_100px_100px_120px_100px] items-center px-3 py-2.5 transition-colors hover:bg-white/[0.025]"
+                        className="grid grid-cols-[52px_minmax(220px,1fr)_110px_110px_110px_120px] items-center px-3 py-2.5 transition-colors hover:bg-white/[0.025]"
                       >
                         <span
                           className={`text-[10px] tabular-nums ${
@@ -204,10 +263,6 @@ function Meta() {
 
                         <div className="text-right text-[10px] tabular-nums text-white/35">
                           {formatMatches(item.matchCount)}
-                        </div>
-
-                        <div className="text-right">
-                          <RatingBadge score={item.metaScore} />
                         </div>
                       </Link>
                     );
