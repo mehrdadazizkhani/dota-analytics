@@ -1,12 +1,28 @@
 import { useEffect, useState } from "react";
 import { getHeroMeta } from "../lib/api/stratz";
 
-function normalizeValue(value, min, max) {
-  if (max === min) {
-    return 100;
+const WILSON_Z = 1.96;
+
+function calculateWilsonScore(winCount, matchCount) {
+  const n = Number(matchCount);
+  const wins = Number(winCount);
+
+  if (!n || n <= 0) {
+    return 0;
   }
 
-  return ((value - min) / (max - min)) * 100;
+  const p = Math.min(1, Math.max(0, wins / n));
+  const z2 = WILSON_Z * WILSON_Z;
+
+  const denominator = 1 + z2 / n;
+
+  const centre = p + z2 / (2 * n);
+
+  const margin = WILSON_Z * Math.sqrt((p * (1 - p) + z2 / (4 * n)) / n);
+
+  const score = (centre - margin) / denominator;
+
+  return Math.max(0, Math.min(1, score));
 }
 
 function calculateMetaStats(stats, heroes) {
@@ -22,33 +38,13 @@ function calculateMetaStats(stats, heroes) {
     return [];
   }
 
-  const winRates = validStats.map((hero) => hero.winRate);
-
-  const pickRates = validStats.map((hero) => hero.pickRate);
-
-  const minWinRate = Math.min(...winRates);
-  const maxWinRate = Math.max(...winRates);
-
-  const minPickRate = Math.min(...pickRates);
-  const maxPickRate = Math.max(...pickRates);
-
   const scoredStats = validStats.map((hero) => {
-    const normalizedWinRate = normalizeValue(
-      hero.winRate,
-      minWinRate,
-      maxWinRate,
-    );
-
-    const normalizedPickRate = normalizeValue(
-      hero.pickRate,
-      minPickRate,
-      maxPickRate,
-    );
-
-    const metaScore = normalizedWinRate * 0.6 + normalizedPickRate * 0.4;
+    const metaScore =
+      calculateWilsonScore(hero.winCount, hero.matchCount) * 100;
 
     return {
       ...hero,
+      heroId: Number(hero.heroId),
       metaScore,
     };
   });
@@ -71,7 +67,6 @@ function calculateMetaStats(stats, heroes) {
 
   return scoredStats.map((hero) => ({
     ...hero,
-    heroId: Number(hero.heroId),
     isMeta: metaHeroIds.has(Number(hero.heroId)),
   }));
 }

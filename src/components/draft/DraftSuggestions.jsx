@@ -14,34 +14,149 @@ function DraftSuggestions({ heroes = [], draftState, suggestions }) {
 
   const { bestPicks, comfortPicks, bestBans, teamThreats } = suggestions;
 
+  const reasonLabels = {
+    meta: "META",
+    synergy: "SYNERGY",
+    counter: "COUNTER",
+    threat: "TEAM FIT",
+    teamComposition: "COMPOSITION",
+    enemyRoleNeed: "ENEMY ROLE",
+    enemySynergy: "ENEMY SYNERGY",
+    threatToOurTeam: "VS OUR TEAM",
+    enemyComposition: "ENEMY COMPOSITION",
+    teamThreat: "TEAM THREAT",
+  };
+
   function HeroCard({ item }) {
     const hero = item?.hero;
-
     if (!hero) {
       return null;
     }
-
+    const score = Number(item?.score);
+    const scoreParts = Object.entries(item?.breakdown || {})
+      .map(([key, value]) => ({
+        key,
+        label:
+          reasonLabels[key] || key.replace(/([A-Z])/g, " $1").toUpperCase(),
+        value: Number(value),
+      }))
+      .filter((part) => Number.isFinite(part.value));
+    const primaryReason = [...scoreParts].sort((a, b) => b.value - a.value)[0];
     return (
-      <div className="group relative overflow-hidden rounded-md border border-white/[0.07] bg-white/[0.02]">
-        <div className="aspect-[71/94] w-full">
+      <div className="group cursor-pointer relative h-[104px] overflow-hidden rounded-lg border border-white/[0.07] bg-[#0b0d10] transition-all duration-200 hover:border-white/[0.15]">
+        {" "}
+        {/* top accent */}{" "}
+        <div className="absolute inset-x-0 top-0 z-30 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent opacity-60 transition-opacity duration-200 group-hover:opacity-100" />{" "}
+        {/* HERO IMAGE */}{" "}
+        <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden">
+          {" "}
           {hero.shortName ? (
             <img
               src={`https://cdn.stratz.com/images/dota2/heroes/${hero.shortName}_vert.png`}
               alt={hero.displayName}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-[8px] text-white/20">
-              NO IMAGE
+              {" "}
+              NO IMAGE{" "}
             </div>
-          )}
-        </div>
-
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent px-2 pb-1.5 pt-5">
-          <div className="truncate text-[8px] font-medium text-white/70">
-            {hero.displayName || "Unknown Hero"}
-          </div>
-        </div>
+          )}{" "}
+          {/* normal image fade */}{" "}
+          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#0b0d10] to-transparent" />{" "}
+        </div>{" "}
+        {/* NORMAL INFO */}{" "}
+        <div className="absolute inset-y-0 left-1/2 right-0 z-10 flex flex-col justify-between px-2.5 py-2 transition-opacity duration-150 group-hover:opacity-0">
+          {" "}
+          <div>
+            {" "}
+            <div className="truncate text-[11px] font-semibold uppercase tracking-[0.04em] text-white/80">
+              {" "}
+              {hero.displayName || "Unknown Hero"}{" "}
+            </div>{" "}
+            {primaryReason && primaryReason.value > 0 && (
+              <div className="mt-1 flex items-center gap-1.5">
+                {" "}
+                <span className="h-1 w-1 rounded-full bg-emerald-400/70" />{" "}
+                <span className="truncate text-[8px] font-semibold uppercase tracking-[0.1em] text-emerald-400/55">
+                  {" "}
+                  {primaryReason.label}{" "}
+                </span>{" "}
+              </div>
+            )}{" "}
+          </div>{" "}
+          {Number.isFinite(score) && (
+            <div>
+              {" "}
+              <div className="flex items-end justify-between">
+                {" "}
+                <span className="text-[7px] uppercase tracking-[0.1em] text-white/25">
+                  {" "}
+                  Score{" "}
+                </span>{" "}
+                <span className="text-[13px] font-semibold tabular-nums text-white/75">
+                  {" "}
+                  {score.toFixed(1)}{" "}
+                </span>{" "}
+              </div>{" "}
+              <div className="mt-1 h-[2px] overflow-hidden rounded-full bg-white/[0.06]">
+                {" "}
+                <div
+                  className="h-full rounded-full bg-emerald-400/50"
+                  style={{ width: `${Math.min(Math.max(score, 0), 100)}%` }}
+                />{" "}
+              </div>{" "}
+            </div>
+          )}{" "}
+        </div>{" "}
+        {/* EXPANDED HOVER PANEL */}
+        <div className="absolute inset-y-0 right-0 z-20 w-[70%] translate-x-3 opacity-0 transition-all duration-250 group-hover:translate-x-0 group-hover:opacity-100">
+          {" "}
+          <div className="absolute inset-0 bg-gradient-to-l from-[#0b0d10] via-[#0b0d10]/95 to-[#0b0d10]/10" />
+          <div className="relative flex h-full flex-col justify-center pl-5 pr-2.5">
+            {" "}
+            {/* hero name */}{" "}
+            <div className="truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white/85">
+              {" "}
+              {hero.displayName || "Unknown Hero"}{" "}
+            </div>{" "}
+            {/* score */}{" "}
+            {Number.isFinite(score) && (
+              <div className="mt-1 flex items-center justify-between">
+                {" "}
+                <span className="text-[6px] uppercase tracking-[0.12em] text-white/25">
+                  {" "}
+                  Draft Score{" "}
+                </span>{" "}
+                <span className="text-[12px] font-semibold tabular-nums text-emerald-300/70">
+                  {" "}
+                  {score.toFixed(1)}{" "}
+                </span>{" "}
+              </div>
+            )}{" "}
+            {/* divider */} <div className="my-1.5 h-px bg-white/[0.06]" />{" "}
+            {/* breakdown */}{" "}
+            <div className="space-y-1">
+              {" "}
+              {scoreParts.slice(0, 4).map((part) => (
+                <div
+                  key={part.key}
+                  className="flex items-center justify-between gap-2"
+                >
+                  {" "}
+                  <span className="truncate text-[6px] font-medium uppercase tracking-[0.08em] text-white/30">
+                    {" "}
+                    {part.label}{" "}
+                  </span>{" "}
+                  <span className="shrink-0 text-[8px] font-medium tabular-nums text-white/55">
+                    {" "}
+                    {part.value.toFixed(0)}{" "}
+                  </span>{" "}
+                </div>
+              ))}{" "}
+            </div>{" "}
+          </div>{" "}
+        </div>{" "}
       </div>
     );
   }
