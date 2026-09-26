@@ -57,10 +57,15 @@ export async function getHero(heroId) {
 export async function getHeroMeta() {
   const data = await requestStratz(GET_HERO_META);
 
-  const stats = data.heroStats?.winDay || [];
+  const winStats = data.heroStats?.winDay || [];
+  const banStats = data.heroStats?.banDay || [];
+
+  // -----------------------------
+  // Group 8-day win data by hero
+  // -----------------------------
   const heroStatsMap = new Map();
 
-  for (const stat of stats) {
+  for (const stat of winStats) {
     const heroId = Number(stat.heroId);
 
     if (!heroId) {
@@ -79,38 +84,102 @@ export async function getHeroMeta() {
     });
   }
 
-  const allLatestStats = [];
+  // -----------------------------
+  // Aggregate 8-day hero stats
+  // -----------------------------
+  const heroAggregates = [];
 
-  for (const [, heroDays] of heroStatsMap) {
-    const sortedDays = [...heroDays].sort((a, b) => b.day - a.day);
+  for (const [heroId, heroDays] of heroStatsMap) {
+    const sortedDays = [...heroDays].sort((a, b) => a.day - b.day);
 
-    const latest = sortedDays[0];
+    const winCount = sortedDays.reduce((total, day) => total + day.winCount, 0);
 
-    if (latest) {
-      allLatestStats.push(latest);
-    }
+    const matchCount = sortedDays.reduce(
+      (total, day) => total + day.matchCount,
+      0,
+    );
+
+    const latestDay = sortedDays[sortedDays.length - 1];
+
+    heroAggregates.push({
+      heroId,
+      winCount,
+      matchCount,
+      day: latestDay?.day || 0,
+      days: sortedDays,
+    });
   }
 
-  const totalMatches = allLatestStats.reduce(
+  // -----------------------------
+  // Ban data
+  //
+  // STRATZ currently requires heroId
+  // for banDay. With heroId: 1 it
+  // returns the hero rows we need.
+  // -----------------------------
+  const banCountMap = new Map();
+
+  for (const stat of banStats) {
+    const heroId = Number(stat.heroId);
+
+    if (!heroId) {
+      continue;
+    }
+
+    banCountMap.set(heroId, Number(stat.matchCount || 0));
+  }
+
+  // -----------------------------
+  // Total games
+  //
+  // Every Dota match contributes
+  // 10 hero picks.
+  // -----------------------------
+  const totalPicks = heroAggregates.reduce(
     (total, hero) => total + hero.matchCount,
     0,
   );
 
-  return allLatestStats.map((hero) => {
+  const totalGames = totalPicks / 10;
+
+  // -----------------------------
+  // Final meta stats
+  // -----------------------------
+  return heroAggregates.map((hero) => {
+    const banCount = banCountMap.get(hero.heroId) || 0;
+
     const winRate =
       hero.matchCount > 0 ? (hero.winCount / hero.matchCount) * 100 : 0;
 
-    const pickRate =
-      totalMatches > 0 ? (hero.matchCount / totalMatches) * 100 : 0;
+    const pickRate = totalGames > 0 ? (hero.matchCount / totalGames) * 100 : 0;
+
+    const banRate = totalGames > 0 ? (banCount / totalGames) * 100 : 0;
+
+    const metaPresence =
+      totalGames > 0 ? ((hero.matchCount + banCount) / totalGames) * 100 : 0;
+
+    const metaImpact = winRate * banRate;
 
     return {
       heroId: hero.heroId,
+
+      // Core stats
       winCount: hero.winCount,
       matchCount: hero.matchCount,
       winRate,
       pickRate,
+
+      // Ban stats
+      banCount,
+      banRate,
+
+      // Dominance Map stats
+      metaPresence,
+      metaImpact,
+
+      // Trend data
       day: hero.day,
-      days: heroStatsMap.get(hero.heroId).sort((a, b) => a.day - b.day),
+      days: hero.days,
     };
   });
 }

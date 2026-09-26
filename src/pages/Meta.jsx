@@ -710,7 +710,7 @@ function Meta() {
 
                           <div
                             className={`text-[10px] tabular-nums ${
-                              rank <= 3
+                              rank <= 20
                                 ? "font-semibold text-red-400"
                                 : "text-white/25"
                             }`}

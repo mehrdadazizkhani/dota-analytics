@@ -86,6 +86,11 @@ export const GET_HERO_META = `
         winCount
         matchCount
       }
+
+      banDay(take: 8, heroId: 1) {
+        heroId
+        matchCount
+      }
     }
   }
 `;
