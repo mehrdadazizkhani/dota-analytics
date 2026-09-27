@@ -53,10 +53,7 @@ function calculateMetaStats(stats, heroes) {
     0,
   );
 
-  const totalBans = validStats.reduce(
-    (total, hero) => total + Number(hero.banCount || 0),
-    0,
-  );
+  const totalGames = totalPicks / 10;
 
   // Calculate the raw Wilson score for every hero first.
   const scoredStats = validStats.map((hero) => {
@@ -77,9 +74,9 @@ function calculateMetaStats(stats, heroes) {
       };
     });
 
-    const pickRate = totalPicks > 0 ? (matchCount / totalPicks) * 100 : 0;
+    const pickRate = totalGames > 0 ? (matchCount / totalGames) * 100 : 0;
 
-    const banRate = totalBans > 0 ? (banCount / totalBans) * 100 : 0;
+    const banRate = totalGames > 0 ? (banCount / totalGames) * 100 : 0;
 
     const metaPresence = pickRate + banRate;
 

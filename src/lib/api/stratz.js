@@ -125,6 +125,23 @@ export async function getHeroMeta() {
       heroId,
       (banCountMap.get(heroId) || 0) + Number(stat.matchCount || 0),
     );
+    for (const stat of banStats) {
+      console.log("BAN DEBUG:", {
+        heroId: stat.heroId,
+        matchCount: stat.matchCount,
+      });
+
+      const heroId = Number(stat.heroId);
+
+      if (!heroId) {
+        continue;
+      }
+
+      banCountMap.set(
+        heroId,
+        (banCountMap.get(heroId) || 0) + Number(stat.matchCount || 0),
+      );
+    }
   }
 
   // -----------------------------
