@@ -46,9 +46,25 @@ function calculateMetaStats(stats, heroes) {
     return [];
   }
 
+  // Total picks and bans across all heroes.
+  // Pick Rate and Ban Rate are shares of their respective totals.
+  const totalPicks = validStats.reduce(
+    (total, hero) => total + Number(hero.matchCount || 0),
+    0,
+  );
+
+  const totalBans = validStats.reduce(
+    (total, hero) => total + Number(hero.banCount || 0),
+    0,
+  );
+
   // Calculate the raw Wilson score for every hero first.
   const scoredStats = validStats.map((hero) => {
-    const wilsonScore = calculateWilsonScore(hero.winCount, hero.matchCount);
+    const matchCount = Number(hero.matchCount || 0);
+    const winCount = Number(hero.winCount || 0);
+    const banCount = Number(hero.banCount || 0);
+
+    const wilsonScore = calculateWilsonScore(winCount, matchCount);
 
     const trend = (hero.days || []).map((day) => {
       const dayWilsonScore = calculateWilsonScore(day.winCount, day.matchCount);
@@ -61,10 +77,31 @@ function calculateMetaStats(stats, heroes) {
       };
     });
 
+    const pickRate = totalPicks > 0 ? (matchCount / totalPicks) * 100 : 0;
+
+    const banRate = totalBans > 0 ? (banCount / totalBans) * 100 : 0;
+
+    const metaPresence = pickRate + banRate;
+
+    // Wilson Score × Meta Presence
+    // Wilson is converted to 0–100 first so the value is easier
+    // to interpret and display.
+    const wilsonScorePercent = wilsonScore * 100;
+
+    const metaStrength = wilsonScorePercent * metaPresence;
+
     return {
       ...hero,
       heroId: Number(hero.heroId),
+      winCount,
+      matchCount,
+      banCount,
+      pickRate,
+      banRate,
+      metaPresence,
       wilsonScore,
+      wilsonScorePercent,
+      metaStrength,
       trend,
     };
   });
@@ -76,6 +113,7 @@ function calculateMetaStats(stats, heroes) {
   const maxWilson = Math.max(...wilsonScores);
 
   // Normalize the current rating to 0–100.
+  // This remains the existing Meta Table rating.
   const normalizedStats = scoredStats.map((hero) => {
     const metaScore = calculateRating(hero.wilsonScore, minWilson, maxWilson);
 

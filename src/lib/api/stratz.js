@@ -132,7 +132,6 @@ export async function getHeroMeta() {
   //
   // Every Dota game has 10 picks.
   // -----------------------------
-
   const totalPicks = heroAggregates.reduce(
     (total, hero) => total + hero.matchCount,
     0,
