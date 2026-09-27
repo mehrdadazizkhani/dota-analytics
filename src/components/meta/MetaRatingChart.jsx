@@ -195,6 +195,8 @@ function MetaRatingChart({ rows }) {
       ? displayRows.find((row) => row.heroId === hoveredHeroId)
       : null;
 
+  const statsHero = hoveredRow || visibleRows[0];
+
   function getQuadrant(row) {
     if (
       row.metaPresence >= splits.presence &&
@@ -216,6 +218,21 @@ function MetaRatingChart({ rows }) {
 
   return (
     <div className="relative select-none">
+      <style>
+        {`
+          @keyframes metaStatsFade {
+            from {
+              opacity: 0;
+              transform: translateY(2px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}
+      </style>
+
       {/* Header */}
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -262,6 +279,91 @@ function MetaRatingChart({ rows }) {
             <span>{totalHeroes}</span>
           </div>
         </div>
+      </div>
+
+      {/* Hero Stats Bar */}
+      <div className="mb-2 flex min-h-[44px] items-center overflow-hidden rounded-xl border border-white/[0.06] bg-[#07080a] px-3 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+        {statsHero && (
+          <div
+            key={statsHero.heroId}
+            className="flex w-full items-center gap-3"
+            style={{
+              animation: "metaStatsFade 160ms ease-out",
+            }}
+          >
+            {/* State */}
+            <div className="flex shrink-0 items-center gap-2">
+              <span
+                className={`h-1 w-1 rounded-full ${
+                  hoveredRow ? "bg-white/50" : "bg-red-400"
+                }`}
+              />
+
+              <span className="text-[7px] font-semibold uppercase tracking-[0.16em] text-white/25">
+                {hoveredRow ? "Hovered" : "Best Hero"}
+              </span>
+            </div>
+
+            {/* Hero icon */}
+            <div className="h-7 w-10 shrink-0 overflow-hidden rounded-md bg-white/[0.025] shadow-[0_0_14px_rgba(0,0,0,0.7)]">
+              <img
+                src={getHeroIcon(statsHero.hero)}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            </div>
+
+            {/* Hero name */}
+            <div className="min-w-0 shrink-0">
+              <div className="max-w-[150px] truncate text-[10px] font-semibold text-white/80">
+                {statsHero.hero?.displayName || statsHero.hero?.name}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="ml-auto flex items-center gap-5">
+              <div>
+                <div className="text-[6px] uppercase tracking-[0.12em] text-white/20">
+                  Win Rate
+                </div>
+
+                <div className="mt-0.5 text-[10px] font-semibold tabular-nums text-white/65">
+                  {formatPercent(statsHero.winRate)}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[6px] uppercase tracking-[0.12em] text-white/20">
+                  Pick Rate
+                </div>
+
+                <div className="mt-0.5 text-[10px] font-semibold tabular-nums text-white/65">
+                  {formatPercent(statsHero.pickRate)}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[6px] uppercase tracking-[0.12em] text-white/20">
+                  Ban Rate
+                </div>
+
+                <div className="mt-0.5 text-[10px] font-semibold tabular-nums text-white/65">
+                  {formatPercent(statsHero.banRate)}
+                </div>
+              </div>
+
+              <div className="hidden sm:block">
+                <div className="text-[6px] uppercase tracking-[0.12em] text-white/20">
+                  Matches
+                </div>
+
+                <div className="mt-0.5 text-[10px] font-semibold tabular-nums text-white/45">
+                  {statsHero.matchCount.toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Map */}
@@ -518,19 +620,6 @@ function MetaRatingChart({ rows }) {
 
             const isHovered = hoveredHeroId === row.heroId;
 
-            const quadrant = getQuadrant(row);
-
-            const accent =
-              quadrant === "tyrant"
-                ? "248,113,113"
-                : quadrant === "specialist"
-                  ? "168,85,247"
-                  : quadrant === "staple"
-                    ? "251,191,36"
-                    : "148,163,184";
-
-            const iconSize = isHovered ? 48 : 31;
-
             return (
               <g
                 key={row.heroId}
@@ -538,74 +627,33 @@ function MetaRatingChart({ rows }) {
                 onPointerLeave={() => setHoveredHeroId(null)}
                 className="cursor-pointer"
               >
+                {/* Black hover glow only */}
                 {isHovered && (
                   <circle
                     cx={x}
                     cy={y}
-                    r={iconSize * 0.72}
-                    fill={`rgba(${accent},0.14)`}
+                    r="21"
+                    fill="rgba(0,0,0,0.28)"
                     filter="url(#metaGlowStrong)"
                   />
                 )}
 
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={isHovered ? 25 : 18}
-                  fill={`rgba(${accent},${isHovered ? 0.1 : 0.035})`}
-                  stroke={`rgba(${accent},${isHovered ? 0.45 : 0.16})`}
-                  strokeWidth={isHovered ? 1.5 : 1}
-                />
-
+                {/* Hero icon only */}
                 <image
                   href={getHeroIcon(row.hero)}
-                  x={x - iconSize / 2}
-                  y={y - iconSize / 2}
-                  width={iconSize}
-                  height={iconSize}
+                  x={x - 16}
+                  y={y - 16}
+                  width="32"
+                  height="32"
                   preserveAspectRatio="xMidYMid slice"
                   opacity={isHovered ? 1 : 0.88}
+                  style={{
+                    filter: isHovered
+                      ? "drop-shadow(0 0 7px rgba(0,0,0,0.95))"
+                      : "none",
+                    transition: "filter 160ms ease, opacity 160ms ease",
+                  }}
                 />
-
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={iconSize / 2}
-                  fill="none"
-                  stroke={
-                    isHovered ? `rgba(${accent},0.8)` : "rgba(255,255,255,0.16)"
-                  }
-                  strokeWidth={isHovered ? 2 : 1}
-                />
-
-                {isHovered && (
-                  <g pointerEvents="none">
-                    <rect
-                      x={x - 54}
-                      y={y + 29}
-                      width="108"
-                      height="19"
-                      rx="5"
-                      fill="rgba(7,8,10,0.92)"
-                      stroke={`rgba(${accent},0.25)`}
-                    />
-
-                    <text
-                      x={x}
-                      y={y + 42}
-                      textAnchor="middle"
-                      fill="rgba(255,255,255,0.88)"
-                      fontSize="7"
-                      fontWeight="700"
-                      letterSpacing="0.7"
-                      fontFamily="inherit"
-                    >
-                      {(row.hero?.displayName || row.hero?.name || "Unknown")
-                        .toUpperCase()
-                        .slice(0, 18)}
-                    </text>
-                  </g>
-                )}
               </g>
             );
           })}
@@ -655,105 +703,6 @@ function MetaRatingChart({ rows }) {
             META IMPACT · RELATIVE
           </text>
         </svg>
-
-        {/* Tooltip */}
-        {hoveredRow && (
-          <div className="pointer-events-none absolute left-1/2 top-3 z-30 w-[250px] -translate-x-1/2 rounded-xl border border-white/[0.09] bg-[#0d0f13]/95 p-3 shadow-2xl backdrop-blur-xl sm:left-auto sm:right-4 sm:translate-x-0">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/[0.08] bg-black">
-                <img
-                  src={getHeroIcon(hoveredRow.hero)}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <div className="truncate text-[11px] font-bold text-white/90">
-                  {hoveredRow.hero?.displayName || hoveredRow.hero?.name}
-                </div>
-
-                <div className="mt-0.5 text-[7px] uppercase tracking-[0.14em] text-white/25">
-                  Meta Dominance
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
-              <div>
-                <div className="text-[7px] uppercase tracking-[0.12em] text-white/25">
-                  Presence
-                </div>
-
-                <div className="mt-0.5 text-[11px] font-semibold tabular-nums text-white/90">
-                  {formatPercent(hoveredRow.metaPresence)}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-[7px] uppercase tracking-[0.12em] text-white/25">
-                  Impact
-                </div>
-
-                <div className="mt-0.5 text-[11px] font-semibold tabular-nums text-red-300">
-                  {formatNumber(hoveredRow.metaImpact)}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-[7px] uppercase tracking-[0.12em] text-white/25">
-                  Win Rate
-                </div>
-
-                <div className="mt-0.5 text-[10px] tabular-nums text-white/65">
-                  {formatPercent(hoveredRow.winRate)}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-[7px] uppercase tracking-[0.12em] text-white/25">
-                  Pick Rate
-                </div>
-
-                <div className="mt-0.5 text-[10px] tabular-nums text-white/65">
-                  {formatPercent(hoveredRow.pickRate)}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-[7px] uppercase tracking-[0.12em] text-white/25">
-                  Ban Rate
-                </div>
-
-                <div className="mt-0.5 text-[10px] tabular-nums text-white/65">
-                  {formatPercent(hoveredRow.banRate)}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-[7px] uppercase tracking-[0.12em] text-white/25">
-                  Matches
-                </div>
-
-                <div className="mt-0.5 text-[10px] tabular-nums text-white/65">
-                  {hoveredRow.matchCount.toLocaleString()}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 border-t border-white/[0.06] pt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[7px] uppercase tracking-[0.12em] text-white/20">
-                  Position
-                </span>
-
-                <span className="text-[7px] font-semibold uppercase tracking-[0.1em] text-white/45">
-                  {getQuadrant(hoveredRow)}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Legend */}
