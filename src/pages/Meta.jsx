@@ -719,9 +719,9 @@ function Meta() {
                           </div>
 
                           <div className="flex min-w-0 items-center gap-3">
-                            <div className="h-8 w-8 shrink-0 overflow-hidden rounded border border-white/[0.08] bg-white/[0.025]">
+                            <div className="h-8  shrink-0 overflow-hidden rounded border border-white/[0.08] bg-white/[0.025]">
                               <img
-                                src={getHeroAsset(hero, "portrait")}
+                                src={getHeroAsset(hero, "landscape")}
                                 alt=""
                                 className="h-full w-full object-cover"
                                 loading="lazy"

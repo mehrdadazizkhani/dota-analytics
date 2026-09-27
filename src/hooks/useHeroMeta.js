@@ -25,8 +25,12 @@ function calculateWilsonScore(winCount, matchCount) {
   return Math.max(0, Math.min(1, score));
 }
 
-function calculateRating(winCount, matchCount) {
-  return calculateWilsonScore(winCount, matchCount) * 100;
+function calculateRating(wilsonScore, minWilson, maxWilson) {
+  if (maxWilson === minWilson) {
+    return 100;
+  }
+
+  return ((wilsonScore - minWilson) / (maxWilson - minWilson)) * 100;
 }
 
 function calculateMetaStats(stats, heroes) {
@@ -42,25 +46,52 @@ function calculateMetaStats(stats, heroes) {
     return [];
   }
 
+  // Calculate the raw Wilson score for every hero first.
   const scoredStats = validStats.map((hero) => {
-    const metaScore = calculateRating(hero.winCount, hero.matchCount);
+    const wilsonScore = calculateWilsonScore(hero.winCount, hero.matchCount);
 
-    const trend = (hero.days || []).map((day) => ({
-      day: day.day,
-      rating: calculateRating(day.winCount, day.matchCount),
-      winCount: day.winCount,
-      matchCount: day.matchCount,
-    }));
+    const trend = (hero.days || []).map((day) => {
+      const dayWilsonScore = calculateWilsonScore(day.winCount, day.matchCount);
+
+      return {
+        day: day.day,
+        wilsonScore: dayWilsonScore,
+        winCount: day.winCount,
+        matchCount: day.matchCount,
+      };
+    });
 
     return {
       ...hero,
       heroId: Number(hero.heroId),
+      wilsonScore,
+      trend,
+    };
+  });
+
+  // Find the Wilson score range across all heroes.
+  const wilsonScores = scoredStats.map((hero) => hero.wilsonScore);
+
+  const minWilson = Math.min(...wilsonScores);
+  const maxWilson = Math.max(...wilsonScores);
+
+  // Normalize the current rating to 0–100.
+  const normalizedStats = scoredStats.map((hero) => {
+    const metaScore = calculateRating(hero.wilsonScore, minWilson, maxWilson);
+
+    const trend = hero.trend.map((day) => ({
+      ...day,
+      rating: calculateRating(day.wilsonScore, minWilson, maxWilson),
+    }));
+
+    return {
+      ...hero,
       metaScore,
       trend,
     };
   });
 
-  const sortedStats = [...scoredStats].sort((a, b) => {
+  const sortedStats = [...normalizedStats].sort((a, b) => {
     if (b.metaScore !== a.metaScore) {
       return b.metaScore - a.metaScore;
     }
@@ -76,7 +107,7 @@ function calculateMetaStats(stats, heroes) {
     sortedStats.slice(0, 20).map((hero) => Number(hero.heroId)),
   );
 
-  return scoredStats.map((hero) => {
+  return normalizedStats.map((hero) => {
     const trend = hero.trend || [];
 
     let change = 0;

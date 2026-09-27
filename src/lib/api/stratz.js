@@ -60,10 +60,11 @@ export async function getHeroMeta() {
   const winStats = data.heroStats?.winDay || [];
   const banStats = data.heroStats?.banDay || [];
 
-  // -----------------------------
-  // Group 8-day win data by hero
-  // -----------------------------
   const heroStatsMap = new Map();
+
+  // -----------------------------
+  // Aggregate 8 days of picks/wins
+  // -----------------------------
 
   for (const stat of winStats) {
     const heroId = Number(stat.heroId);
@@ -84,9 +85,6 @@ export async function getHeroMeta() {
     });
   }
 
-  // -----------------------------
-  // Aggregate 8-day hero stats
-  // -----------------------------
   const heroAggregates = [];
 
   for (const [heroId, heroDays] of heroStatsMap) {
@@ -111,12 +109,9 @@ export async function getHeroMeta() {
   }
 
   // -----------------------------
-  // Ban data
-  //
-  // STRATZ currently requires heroId
-  // for banDay. With heroId: 1 it
-  // returns the hero rows we need.
+  // Aggregate 8 days of bans
   // -----------------------------
+
   const banCountMap = new Map();
 
   for (const stat of banStats) {
@@ -126,15 +121,18 @@ export async function getHeroMeta() {
       continue;
     }
 
-    banCountMap.set(heroId, Number(stat.matchCount || 0));
+    banCountMap.set(
+      heroId,
+      (banCountMap.get(heroId) || 0) + Number(stat.matchCount || 0),
+    );
   }
 
   // -----------------------------
   // Total games
   //
-  // Every Dota match contributes
-  // 10 hero picks.
+  // Every Dota game has 10 picks.
   // -----------------------------
+
   const totalPicks = heroAggregates.reduce(
     (total, hero) => total + hero.matchCount,
     0,
@@ -143,8 +141,9 @@ export async function getHeroMeta() {
   const totalGames = totalPicks / 10;
 
   // -----------------------------
-  // Final meta stats
+  // Final hero statistics
   // -----------------------------
+
   return heroAggregates.map((hero) => {
     const banCount = banCountMap.get(hero.heroId) || 0;
 
@@ -155,29 +154,25 @@ export async function getHeroMeta() {
 
     const banRate = totalGames > 0 ? (banCount / totalGames) * 100 : 0;
 
-    const metaPresence =
-      totalGames > 0 ? ((hero.matchCount + banCount) / totalGames) * 100 : 0;
+    const metaPresence = pickRate + banRate;
 
     const metaImpact = winRate * banRate;
 
     return {
       heroId: hero.heroId,
 
-      // Core stats
       winCount: hero.winCount,
       matchCount: hero.matchCount,
+
       winRate,
       pickRate,
 
-      // Ban stats
       banCount,
       banRate,
 
-      // Dominance Map stats
       metaPresence,
       metaImpact,
 
-      // Trend data
       day: hero.day,
       days: hero.days,
     };

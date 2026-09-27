@@ -24,6 +24,29 @@ function getHeroIcon(hero) {
   return `https://cdn.stratz.com/images/dota2/heroes/${hero.shortName}_icon.png`;
 }
 
+function getMedian(values) {
+  if (!values.length) {
+    return 0;
+  }
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2) {
+    return sorted[middle];
+  }
+
+  return (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function getRelativePosition(value, min, max) {
+  if (max === min) {
+    return 50;
+  }
+
+  return ((value - min) / (max - min)) * 100;
+}
+
 function MetaRatingChart({ rows }) {
   const [hoveredHeroId, setHoveredHeroId] = useState(null);
 
@@ -31,6 +54,7 @@ function MetaRatingChart({ rows }) {
     return rows
       .map((row) => ({
         ...row,
+        heroId: Number(row.heroId),
         metaPresence: Number(row.metaPresence || 0),
         metaImpact: Number(row.metaImpact || 0),
         winRate: Number(row.winRate || 0),
@@ -41,39 +65,73 @@ function MetaRatingChart({ rows }) {
       }))
       .filter(
         (row) =>
-          Number.isFinite(row.metaPresence) && Number.isFinite(row.metaImpact),
+          Number.isFinite(row.heroId) &&
+          Number.isFinite(row.metaPresence) &&
+          Number.isFinite(row.metaImpact),
       );
   }, [rows]);
 
   const bounds = useMemo(() => {
     if (!chartRows.length) {
       return {
-        xMax: 100,
-        yMax: 100,
+        minPresence: 0,
+        maxPresence: 100,
+        minImpact: 0,
+        maxImpact: 100,
       };
     }
 
-    const maxPresence = Math.max(
-      ...chartRows.map((row) => row.metaPresence),
-      0,
-    );
-
-    const maxImpact = Math.max(...chartRows.map((row) => row.metaImpact), 0);
+    const presenceValues = chartRows.map((row) => row.metaPresence);
+    const impactValues = chartRows.map((row) => row.metaImpact);
 
     return {
-      xMax: Math.max(20, Math.ceil(maxPresence / 10) * 10),
-      yMax: Math.max(100, Math.ceil(maxImpact / 100) * 100),
+      minPresence: Math.min(...presenceValues),
+      maxPresence: Math.max(...presenceValues),
+      minImpact: Math.min(...impactValues),
+      maxImpact: Math.max(...impactValues),
     };
   }, [chartRows]);
+
+  const splits = useMemo(() => {
+    const presenceValues = chartRows.map((row) => row.metaPresence);
+    const impactValues = chartRows.map((row) => row.metaImpact);
+
+    return {
+      presence: getMedian(presenceValues),
+      impact: getMedian(impactValues),
+    };
+  }, [chartRows]);
+
+  const displayRows = useMemo(() => {
+    if (!chartRows.length) {
+      return [];
+    }
+
+    return chartRows.map((row) => {
+      const relativePresence = getRelativePosition(
+        row.metaPresence,
+        bounds.minPresence,
+        bounds.maxPresence,
+      );
+
+      const relativeImpact = getRelativePosition(
+        row.metaImpact,
+        bounds.minImpact,
+        bounds.maxImpact,
+      );
+
+      return {
+        ...row,
+        relativePresence,
+        relativeImpact,
+      };
+    });
+  }, [chartRows, bounds]);
 
   if (!chartRows.length) {
     return null;
   }
 
-  /*
-   * We intentionally use a large SVG coordinate system.
-   * CSS scales it responsively while keeping the map readable.
-   */
   const width = 1200;
   const height = 650;
 
@@ -87,118 +145,47 @@ function MetaRatingChart({ rows }) {
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
 
-  function getX(value) {
-    return padding.left + (value / bounds.xMax) * plotWidth;
+  function getX(relativeValue) {
+    return padding.left + (relativeValue / 100) * plotWidth;
   }
 
-  function getY(value) {
-    return padding.top + plotHeight - (value / bounds.yMax) * plotHeight;
+  function getY(relativeValue) {
+    return padding.top + plotHeight - (relativeValue / 100) * plotHeight;
   }
 
-  /*
-   * Median-ish split gives the map useful quadrants
-   * even when the current meta distribution is clustered.
-   */
-  const xValues = chartRows
-    .map((row) => row.metaPresence)
-    .sort((a, b) => a - b);
+  const splitPresence = getRelativePosition(
+    splits.presence,
+    bounds.minPresence,
+    bounds.maxPresence,
+  );
 
-  const yValues = chartRows.map((row) => row.metaImpact).sort((a, b) => a - b);
+  const splitImpact = getRelativePosition(
+    splits.impact,
+    bounds.minImpact,
+    bounds.maxImpact,
+  );
 
-  const median = (values) => {
-    if (!values.length) {
-      return 0;
-    }
-
-    const middle = Math.floor(values.length / 2);
-
-    if (values.length % 2) {
-      return values[middle];
-    }
-
-    return (values[middle - 1] + values[middle]) / 2;
-  };
-
-  const xSplit = median(xValues);
-  const ySplit = median(yValues);
-
-  const splitX = getX(xSplit);
-  const splitY = getY(ySplit);
-
-  const displayPositions = useMemo(() => {
-    const positions = chartRows.map((row) => ({
-      heroId: row.heroId,
-      x: getX(row.metaPresence),
-      y: getY(row.metaImpact),
-      originalX: getX(row.metaPresence),
-      originalY: getY(row.metaImpact),
-    }));
-
-    const minDistance = 42;
-
-    // A few iterations are enough to spread crowded clusters.
-    for (let iteration = 0; iteration < 8; iteration += 1) {
-      for (let i = 0; i < positions.length; i += 1) {
-        for (let j = i + 1; j < positions.length; j += 1) {
-          const a = positions[i];
-          const b = positions[j];
-
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance >= minDistance) {
-            continue;
-          }
-
-          const safeDistance = Math.max(distance, 0.001);
-
-          const push = (minDistance - safeDistance) * 0.32;
-
-          const nx = dx / safeDistance;
-          const ny = dy / safeDistance;
-
-          a.x -= nx * push;
-          a.y -= ny * push;
-
-          b.x += nx * push;
-          b.y += ny * push;
-        }
-      }
-
-      // Keep everything inside the actual plot.
-      for (const position of positions) {
-        position.x = Math.max(
-          padding.left + 18,
-          Math.min(padding.left + plotWidth - 18, position.x),
-        );
-
-        position.y = Math.max(
-          padding.top + 18,
-          Math.min(padding.top + plotHeight - 18, position.y),
-        );
-      }
-    }
-
-    return positions;
-  }, [chartRows, bounds.xMax, bounds.yMax]);
+  const splitX = getX(splitPresence);
+  const splitY = getY(splitImpact);
 
   const hoveredRow =
     hoveredHeroId !== null
-      ? chartRows.find((row) => row.heroId === hoveredHeroId)
+      ? displayRows.find((row) => row.heroId === hoveredHeroId)
       : null;
 
   function getQuadrant(row) {
-    if (row.metaPresence >= xSplit && row.metaImpact >= ySplit) {
+    if (
+      row.metaPresence >= splits.presence &&
+      row.metaImpact >= splits.impact
+    ) {
       return "tyrant";
     }
 
-    if (row.metaPresence >= xSplit && row.metaImpact < ySplit) {
+    if (row.metaPresence >= splits.presence && row.metaImpact < splits.impact) {
       return "staple";
     }
 
-    if (row.metaPresence < xSplit && row.metaImpact >= ySplit) {
+    if (row.metaPresence < splits.presence && row.metaImpact >= splits.impact) {
       return "specialist";
     }
 
@@ -219,13 +206,12 @@ function MetaRatingChart({ rows }) {
           </div>
 
           <p className="mt-1 text-[9px] text-white/25">
-            Presence vs. impact across the current 8-day meta
+            Relative distribution across the current 8-day meta
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[8px] uppercase tracking-[0.1em] text-white/25">
           <span>X&nbsp; Meta Presence</span>
-
           <span>Y&nbsp; Meta Impact</span>
         </div>
       </div>
@@ -235,6 +221,7 @@ function MetaRatingChart({ rows }) {
         {/* Ambient background */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-red-500/[0.025] blur-3xl" />
+
           <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-500/[0.02] blur-3xl" />
         </div>
 
@@ -320,12 +307,10 @@ function MetaRatingChart({ rows }) {
             const ratio = index / 5;
 
             const x = padding.left + ratio * plotWidth;
-
             const y = padding.top + ratio * plotHeight;
 
-            const xValue = ratio * bounds.xMax;
-
-            const yValue = bounds.yMax - ratio * bounds.yMax;
+            const percentage = ratio * 100;
+            const invertedPercentage = 100 - percentage;
 
             return (
               <g key={`grid-${index}`}>
@@ -355,7 +340,7 @@ function MetaRatingChart({ rows }) {
                   fontSize="8"
                   fontFamily="inherit"
                 >
-                  {xValue.toFixed(0)}%
+                  {percentage.toFixed(0)}
                 </text>
 
                 <text
@@ -366,7 +351,7 @@ function MetaRatingChart({ rows }) {
                   fontSize="8"
                   fontFamily="inherit"
                 >
-                  {yValue.toFixed(0)}
+                  {invertedPercentage.toFixed(0)}
                 </text>
               </g>
             );
@@ -493,14 +478,9 @@ function MetaRatingChart({ rows }) {
           </g>
 
           {/* Hero points */}
-          {chartRows.map((row) => {
-            const displayPosition = displayPositions.find(
-              (position) => position.heroId === row.heroId,
-            );
-
-            const x = displayPosition?.x ?? getX(row.metaPresence);
-
-            const y = displayPosition?.y ?? getY(row.metaImpact);
+          {displayRows.map((row) => {
+            const x = getX(row.relativePresence);
+            const y = getY(row.relativeImpact);
 
             const isHovered = hoveredHeroId === row.heroId;
 
@@ -553,11 +533,6 @@ function MetaRatingChart({ rows }) {
                   width={iconSize}
                   height={iconSize}
                   preserveAspectRatio="xMidYMid slice"
-                  style={{
-                    transition:
-                      "x 160ms ease, y 160ms ease, width 160ms ease, height 160ms ease",
-                    transformOrigin: `${x}px ${y}px`,
-                  }}
                   opacity={isHovered ? 1 : 0.88}
                 />
 
@@ -634,7 +609,7 @@ function MetaRatingChart({ rows }) {
             letterSpacing="1.5"
             fontFamily="inherit"
           >
-            META PRESENCE · PICK + BAN RATE
+            META PRESENCE · RELATIVE
           </text>
 
           <text
@@ -648,11 +623,11 @@ function MetaRatingChart({ rows }) {
             letterSpacing="1.5"
             fontFamily="inherit"
           >
-            META IMPACT · WIN RATE × BAN RATE
+            META IMPACT · RELATIVE
           </text>
         </svg>
 
-        {/* HTML tooltip */}
+        {/* Tooltip */}
         {hoveredRow && (
           <div className="pointer-events-none absolute left-1/2 top-3 z-30 w-[250px] -translate-x-1/2 rounded-xl border border-white/[0.09] bg-[#0d0f13]/95 p-3 shadow-2xl backdrop-blur-xl sm:left-auto sm:right-4 sm:translate-x-0">
             <div className="flex items-center gap-3">
