@@ -499,7 +499,7 @@ function MetaRatingChart({ rows }) {
             x2={splitX}
             y1={padding.top}
             y2={padding.top + plotHeight}
-            stroke="rgba(255,255,255,0.10)"
+            stroke="rgba(255,255,255,0.40)"
             strokeWidth="1"
             strokeDasharray="4 5"
           />
@@ -509,7 +509,7 @@ function MetaRatingChart({ rows }) {
             x2={padding.left + plotWidth}
             y1={splitY}
             y2={splitY}
-            stroke="rgba(255,255,255,0.10)"
+            stroke="rgba(255,255,255,0.40)"
             strokeWidth="1"
             strokeDasharray="4 5"
           />
@@ -710,7 +710,7 @@ function MetaRatingChart({ rows }) {
         <div className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-red-400/70" />
 
-          <span className="text-[7px] uppercase tracking-[0.1em] text-white/25">
+          <span className="text-[9px] uppercase tracking-[0.1em] text-white/40">
             Meta Tyrants
           </span>
         </div>
@@ -718,7 +718,7 @@ function MetaRatingChart({ rows }) {
         <div className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-yellow-400/70" />
 
-          <span className="text-[7px] uppercase tracking-[0.1em] text-white/25">
+          <span className="text-[9px] uppercase tracking-[0.1em] text-white/40">
             Contentious Staples
           </span>
         </div>
@@ -726,7 +726,7 @@ function MetaRatingChart({ rows }) {
         <div className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-purple-400/70" />
 
-          <span className="text-[7px] uppercase tracking-[0.1em] text-white/25">
+          <span className="text-[9px] uppercase tracking-[0.1em] text-white/40">
             Lethal Specialists
           </span>
         </div>
@@ -734,7 +734,7 @@ function MetaRatingChart({ rows }) {
         <div className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-slate-400/60" />
 
-          <span className="text-[7px] uppercase tracking-[0.1em] text-white/25">
+          <span className="text-[9px] uppercase tracking-[0.1em] text-white/40">
             Off-Meta / Niche
           </span>
         </div>

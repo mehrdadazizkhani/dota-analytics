@@ -18,6 +18,10 @@ const navigation = [
         label: "Meta",
         path: "/meta",
       },
+      {
+        label: "Against",
+        path: "/heroes/against",
+      },
     ],
   },
   {
